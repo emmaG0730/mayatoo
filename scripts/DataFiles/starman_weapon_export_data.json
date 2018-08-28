@@ -1,0 +1,18 @@
+{
+
+    "MaleAdult" : {
+        "animation_directories": [
+            "R:/JX4_SourceData/Animation/Characters/MaleAdult_new/Fighting/01/",
+            "R:/JX4_SourceData/Animation/Characters/MaleAdult_new/Fighting/02/",
+            "R:/JX4_SourceData/Animation/Characters/MaleAdult_new/Fighting/04/",
+            "R:/JX4_SourceData/Animation/Characters/MaleAdult_new/Fighting/10/"
+        ],
+        "export_data": {
+            "starman_data_file": "R:/Jx4/tools/dcc/maya/scripts/starmanExporter/starman_settings/sm_weapon_data.json",
+            "namespace": "inputFile:",
+            "data_type": "integer",
+            "master_controller": "c_M_master_v1_CTRL",
+            "export_location": "S:/Jx4/client/GameWorld/Character/starMan/MaleAdult/Weapons/"
+        }
+    }
+}

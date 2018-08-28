@@ -1,0 +1,1 @@
+"../../../../external/winpython-64bit/python-2.7.10.amd64/python.exe" releaseNightly.py

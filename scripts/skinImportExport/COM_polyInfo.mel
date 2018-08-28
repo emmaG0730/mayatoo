@@ -1,0 +1,168 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+        COM_polyInfo.mel
+
+>>Author
+
+        Eric Vignola -- 06-23-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Expands components related to a given input(s)
+
+>>Description
+
+        This is essentially a wrapper around Maya's polyInfo command. We use this command to get related 
+        info to a given input such as, given a vert, list all faces related to this vert. The native 
+        maya command returns a strange output. This wrapper takes the output and turns in into an actual 
+        useful string array made of either the complete names (mode 0) or just the component id (mode 1).
+        
+        IMPORTANT NOTE: This command works on one mesh at a time only.
+
+>>Arguments
+
+        string $input[]: A given string array listing all elements to query.
+        
+        string $func: The polyInfo flag: "vf" = vertToFace returns faces (right hand rule order); 
+                                         "ve" = vertToEdges returns edges (right hand rule order); 
+                                         "ev" = edgeToVerts returns verts (alpha numeric order); 
+                                         "ef" = edgeToFace returns faces (right hand rule order); 
+                                         "fv" = faceToVerts returns verts (right hand rule order); 
+                                         "fe" = faceToEdges returns edges (right hand rule order);
+                                         "fn" = faceNormals;
+
+        int $mode: 0 = default behavior, returns long names; 1 = returns component id only.
+
+>>Return
+
+        string[] List of returned components
+
+>>Syntax
+
+        
+
+>>Examples
+
+        COM_polyInfo({"pPlane3.f[44]","pPlane3.f[45]"},"fv",0);
+        
+        Result: pPlane3.vtx[48] pPlane3.vtx[49] pPlane3.vtx[60] pPlane3.vtx[59] pPlane3.vtx[50] pPlane3.vtx[61] //
+        
+        = = = = = = = =
+        
+        COM_polyInfo({"pPlane3.f[44]","pPlane3.f[45]"},"fv",1);
+        
+        Result: 48 49 60 59 50 61 //
+
+>>Dependencies
+
+        COM_splitString.mel (required)
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+global proc string[] COM_polyInfo(string $input[], string $func, int $mode)
+{
+	string $compList[], $tmp[], $obj, $comp;
+	tokenize $input[0] "." $tmp;
+	$obj = $tmp[0];
+	
+	string $answer[];
+	int $norm = 0;
+	
+	switch ($func){
+	case "vf":
+		$answer	= `polyInfo -vf $input`;
+		$comp		= "f";
+		break;
+    case "ve":
+		$answer	= `polyInfo -ve $input`;
+		$comp		= "e";
+		break;
+    case "ev":
+		$answer	= `polyInfo -ev $input`;
+		$comp		= "vtx";
+		break;
+    case "ef":
+		$answer	= `polyInfo -ef $input`;
+		$comp		= "f";
+		break;
+    case "fv":
+		$answer	= `polyInfo -fv $input`;
+		$comp		= "vtx";
+		break;
+    case "fe":
+		$answer	= `polyInfo -fe $input`;
+		$comp		= "e";
+		break;
+		
+	case "fn":
+		$answer	= `polyInfo -fn $input`;
+		$comp		= "";
+		$norm		= 1;
+		break;
+}
+	
+	string $return[];
+	int $k = 0;
+	for ($i = 0; $i < size($answer); $i++){
+
+		$compList = COM_splitString($answer[$i], " ");
+				
+		if ($norm != 1){
+		
+			for ($j = 2; $j < size($compList); $j++){
+				if ($compList[$j] == "Hard") break;
+				
+				// Check to see if element is already in return
+				int $found = 0;
+				
+				for ($l = 0; $l < size($return); $l++){
+					string $tmp;
+					if ($mode == 0){
+						$tmp = ($obj+"."+$comp+"["+$compList[$j]+"]");
+					}else{
+						$tmp = $compList[$j];
+					}
+					
+					if ($tmp == $return[$l]){
+						$found = 1;
+						break;	
+					}
+				}
+				
+				if ($found == 0){
+					if ($mode == 0){
+						$return[$k] = ($obj+"."+$comp+"["+$compList[$j]+"]");
+					}else{
+						$return[$k] = $compList[$j];
+					}
+					$k++;
+				}
+				
+			}
+		}else{
+			string $tmp = $compList[2];
+			for ($j = 3; $j < size($compList); $j++){
+				$tmp = ($tmp+","+$compList[$j]);
+			}
+		
+			$tmp = ("<<"+$tmp+">>");
+			$return[$k] = $tmp;
+			$k++;
+		}
+
+
+	}
+
+
+	return $return;
+}
+

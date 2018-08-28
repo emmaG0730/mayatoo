@@ -1,0 +1,84 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_normalize.mel
+
+>>Author
+
+        Eric Vignola -- 05-14-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Normalizes a float array.
+
+>>Description
+
+        This procedure takes in a float array. Adds it all up and returns 
+        the original values divided by the total, thus normalizing the array.
+
+>>Arguments
+
+        float $vals[]: The array of values to normalize.
+
+>>Return
+
+        float[]: normalized values
+
+>>Syntax
+
+        
+
+>>Examples
+
+        MATH_normalize({1,2,3,4});
+        
+        Result: 0.1 0.2 0.3 0.4
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+
+global proc float[] MATH_normalize(float $vals[])
+{
+	float $return[];
+	int   $maxId;
+	float $maxVal;
+	
+	float $total = 0;
+	for ($d = 0; $d < size($vals); $d++){
+		$total = $total + $vals[$d];
+	}
+	
+	if ($total != 0){
+		for ($d = 0; $d < `size $vals`; $d++){
+			$return[$d] = ($vals[$d])/$total;
+			
+			if ($return[$d] > $maxVal){
+				$maxId  = $d;
+				$maxVal = $return[$d];
+			}
+		}
+		
+		float $sum = MATH_floatArraySum($return);
+		float $delta = 1-$sum;
+		
+		if ($delta > 0) $return[$maxId] = $return[$maxId]+$delta;
+		
+	}
+	
+	return $return;
+}
+
+

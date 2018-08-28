@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>446</width>
+    <height>327</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Update Reference</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QHeaderView::section 
+{
+ 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fff, stop:1 #333);
+	color: #333;
+	height: 1.54em;
+}
+
+QMainWindow#MainWindow * 
+{
+	color: rgb(187,187,187);
+    background: rgb(68,68,68);
+}
+
+QMainWindow#MainWindow
+{
+    color: rgb(187,187,187);
+	background: rgb(68,68,68);
+	/*border: 0;*/
+}
+
+QMenuBar 
+{
+	color: rgb(187,187,187);
+}
+QMenuBar::item 
+{
+ 	background: transparent;
+ 	color: rgb(187,187,187);
+ 	/*border: 0;*/
+}
+
+QMenuBar::item:selected 
+{
+	background: rgb(82,133,166);
+
+}
+QMenu::item:selected 
+{
+	background: rgb(82,133,166);
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">QWidget
+{
+	color:  rgb(187, 187, 187);
+	background-color: rgb(68, 68, 68);
+}
+
+QLineEdit
+{
+	border: none;
+	border-width: 2px;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(43, 43, 43);
+	padding: 2px;	
+}
+
+QPlainTextEdit
+{
+	border: none;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(43, 43, 43);	
+}
+
+QPushButton
+{
+	border-style: outset;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(93, 93, 93);
+	padding: 5px;
+}
+
+QPushButton:hover
+{
+   background-color: rgb(112, 112, 112);
+}</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Animation Directory</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QPushButton" name="btn_dir">
+          <property name="text">
+           <string>Directory</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="s_animDir">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Reference Rig</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="formLayout_2">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
+        <item row="0" column="0">
+         <widget class="QPushButton" name="btn_file">
+          <property name="text">
+           <string>Ref File</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="s_refRig">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Namespace</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="s_namespace">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>RiGGiERN</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="btn_batchUpdate">
+          <property name="text">
+           <string>Batch Update</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>474</width>
+    <height>205</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>474</width>
+    <height>205</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>474</width>
+    <height>205</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Perforce Config</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QHeaderView::section 
+{
+ 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fff, stop:1 #333);
+	color: #333;
+	height: 1.54em;
+}
+
+QMainWindow#MainWindow * 
+{
+	color: rgb(187,187,187);
+    background: rgb(68,68,68);
+}
+
+QMainWindow#MainWindow
+{
+    color: rgb(187,187,187);
+	background: rgb(68,68,68);
+	/*border: 0;*/
+}
+
+QMenuBar 
+{
+	color: rgb(187,187,187);
+}
+QMenuBar::item 
+{
+ 	background: transparent;
+ 	color: rgb(187,187,187);
+ 	/*border: 0;*/
+}
+
+QMenuBar::item:selected 
+{
+	background: rgb(82,133,166);
+
+}
+QMenu::item:selected 
+{
+	background: rgb(82,133,166);
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">QWidget
+{
+	color:  rgb(187, 187, 187);
+	background-color: rgb(68, 68, 68);
+}
+
+QLineEdit
+{
+	border: none;
+	border-width: 2px;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(43, 43, 43);
+	padding: 2px;	
+}
+
+QPlainTextEdit
+{
+	border: none;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(43, 43, 43);
+}
+
+QPushButton
+{
+	border-style: outset;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(93, 93, 93);
+	padding: 5px;
+}
+
+QPushButton:hover
+{
+   background-color: rgb(112, 112, 112);
+}</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="l_server">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Server (P4PORT):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="s_pPort">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>205.252.23727:1999</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="l_user">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>User (P4USER):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="s_pUser">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="l_client">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Workspace (P4CLIENT):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QLineEdit" name="s_pClient">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="l_charSet">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Charset (P4CHARSET):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QLineEdit" name="s_pCharSet">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Unicode (UTF-8)</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="l_passwd">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Password (P4PASSWD)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLineEdit" name="s_pPasswd">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="echoMode">
+           <enum>QLineEdit::PasswordEchoOnEdit</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QPushButton" name="btn_ok">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>OK</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_cancel">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Cancel</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

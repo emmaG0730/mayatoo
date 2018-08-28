@@ -1,0 +1,89 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_closestPointOnTriangle.mel
+
+>>Author
+
+        Eric Vignola -- 05-14-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Returns the barycentric coords of a point in a triangle.
+
+>>Description
+
+        Given three triangle points and a 4th test point, this routine returns the barycentric 
+        coords of each triangle point to the test point. The resulted weights are then returned 
+        in the form of a vector. The code assumes the point in on the triangle.
+
+>>Arguments
+
+        vector $a: First point of triangle.
+        
+        vector $b: Second point of triangle.
+        
+        vector $c: Third point of triangle.
+        
+        vector $p: Point in space to check.
+
+>>Return
+
+        vector -  barycentric coords
+
+>>Syntax
+
+        
+
+>>Examples
+
+        MATH_barycentricCoord(<<0,0,0>>,<<5,0,0>>,<<2.5,5,0>>,<<2,2,0>>);
+        
+        //  Result: <<0.4, 0.2, 0.4>>
+
+>>Dependencies
+
+        
+
+>>Updates
+
+        
+
+<!--endDoc-->
+
+*/
+
+
+
+global proc vector MATH_barycentricCoord(vector $a, vector $b, vector $c, vector $p)
+{
+	vector $ab = $b - $a;
+	vector $ac = $c - $a;
+	vector $pa = $a - $p;
+	vector $pb = $b - $p;
+	vector $pc = $c - $p;
+	
+	float $xyz[];
+	float $area = mag(cross($ab, $ac));
+	if ($area != 0){
+		$xyz[0]	= mag(cross($pb,$pc))/$area;
+		$xyz[1]	= mag(cross($pa,$pc))/$area;
+		$xyz[2]	= mag(cross($pa,$pb))/$area;
+	}else{
+		$xyz[0]	= 0;
+		$xyz[1]	= 0;
+		$xyz[2]	= 0;
+	}
+	
+	
+	$xyz = MATH_normalize($xyz);
+	
+	vector $coord = <<$xyz[0], $xyz[1], $xyz[2]>>;
+
+	return $coord;
+
+
+
+}

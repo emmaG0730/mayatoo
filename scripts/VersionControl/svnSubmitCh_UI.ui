@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>458</width>
+    <height>318</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>SVN</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QFormLayout" name="formLayout_4">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="l_file">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>文件</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="s_file">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="formLayout_6">
+        <item row="0" column="0">
+         <widget class="QLabel" name="l_info">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>信息:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="s_info">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="l_comment">
+        <property name="font">
+         <font>
+          <family>Microsoft Sans Serif</family>
+         </font>
+        </property>
+        <property name="text">
+         <string>提交描述（请输入英文）</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="s_comment"/>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="layout_buttons">
+        <item row="0" column="2">
+         <widget class="QPushButton" name="btn_cancel">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>取消</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="btn_submit">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>提交</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>458</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuLanguage">
+    <property name="title">
+     <string>语言</string>
+    </property>
+    <addaction name="actionChinese"/>
+    <addaction name="actionEnglish"/>
+   </widget>
+   <addaction name="menuLanguage"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionChinese">
+   <property name="text">
+    <string>中文</string>
+   </property>
+  </action>
+  <action name="actionEnglish">
+   <property name="text">
+    <string>英语</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

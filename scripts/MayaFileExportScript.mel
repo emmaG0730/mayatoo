@@ -1,0 +1,964 @@
+//----------------------------------------------------------------------------------------------------------------------
+/// \file    MayaFileExportScript.mel
+/// \author  Rob Bateman
+/// \date    21-06-2004  last updated [27-03-2009]
+/// \brief  This script defines the user interface for the XMD maya exporter options.
+///     Basically this performs one of two operations
+///
+///     "query"  -  This is done when export starts. We need the script to
+///               read back all of the user interface values and then
+///               create an option string for the plugin to parse.
+///     "post"  -  This is called when the user interface for the plugin
+///               gets created. We need to basically create all of the
+///               UI elements and set their value by parsing the last
+///               stored option string.
+///
+///     Unfortunatly, because I also have the intention of using a lua script
+///     to extend the functionality of the exporter at runtime; this script
+///     is further complicated by having a few text editing facilities
+///     available ;)
+///
+/// \note   * improved the parsing of the option string
+///         * improved the way data 
+//----------------------------------------------------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  This function creates a simple window that displays some help info for the ExtendedHelp lua command.
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdExtendedHelp()
+{
+  string $help_string = 
+  
+          "\tWhen extending a node you are basically adding a few additional\n"     +
+         "attributes to that type. This means that primarily you must specify the\n"   +
+         "type of node that will have the extra attributes. This may either be the\n"   +
+         "mel typename for the node, ie \"locator\", \"mesh\" etc, or the API type\n"   +
+         "\"kLocator\", \"kMesh\" etc.\n\n"                       +
+         
+          "\tOnce you have specified the node type, simply specify the various\n"   +
+         "attributes you want to be exported in addition to the defaults. This can\n"   +
+         "be done by simply writing the following bit of code\n\n"             +
+         
+         "\tExtendedNode {\n"                               +
+         "\t\t_type = \"locator\",\n"                           +
+         "\t\tattrname1 = \"attrtype\",\n"                         +
+         "\t\tattrname2 = \"attrtype\"\n"                         +
+         "\t};\n\n"                                   +
+
+           "\tthe type parameter specifies the actual type of node to have the\n"     +
+         "additional attributes. In this case we are extending the locator node type.\n"+
+         "The attrtype in both cases can be replaced by one of the following :\n\n"   +
+
+         "\tbool\n"                                   +
+         "\tcolour\n"                                   +
+         "\tfloat\n"                                   +
+         "\tfloat3\n"                                   +
+         "\tint\n"                                     + 
+         "\tmatrix\n"                                   +
+         "\tmessage\n"                                   +
+         "\tstring\n"                                   +
+         "\tvector<bool>\n"                               +
+         "\tvector<colour>\n"                               +
+         "\tvector<float>\n"                               +
+         "\tvector<int>\n"                                 +
+         "\tvector<float3>\n"                               +
+         "\tvector<matrix>\n"                               +
+         "\tvector<message>\n"                               +
+         "\tvector<string>\n\n"                             +
+         
+           "\tThese types do not specify the maya types, but rather the types\n"     +
+         "that the exporter will gather them as. Note that vector<bool> means an\n"   + 
+         "array of bools!\n\n"                               +
+         
+           "\tFinally, the identifiers \"attrname1\" & \"attrname2\"\n"         +
+         "are the names of two attributes that we want to export from the node. As\n"   +
+         "an example, you may want to add the name of a cg shader to all phong \n"     +
+         "nodes. To do this you could simply write :\n\n"                +
+         
+         "\tExtendedNode {\n"                               +
+         "\t\ttype = \"phong\",\n"                             +
+         "\t\tshader = \"string\"\n"                           +
+         "\t};\n\n"                                   +
+         
+           "\tThis will now look for the string attribute named \"shader\" and\n"     +
+         "output the string to the exported file. Hope that makes sense, rob.\n";
+         
+  window -title "ExtendedNode Help" -w 550 -h 800;
+    $f = `formLayout`;
+      $s = `scrollField -en false -h 500 -tx $help_string`;
+
+    formLayout -edit 
+          -attachForm $s "left" 0 
+          -attachForm $s "top" 0 
+          -attachForm $s "right" 0 
+          -attachForm $s "bottom" 0
+          $f;
+  
+  showWindow;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  Sets the export options to the minimum required for a morpheme rig.
+//----------------------------------------------------------------------------------------------------------------------
+global proc MorphemeRigPreset()
+{
+  // 2 is false 1 is true for xmdSetRadioControlValue
+  xmdSetRadioControlValue( "xmdAnimation",         2);
+  xmdSetRadioControlValue( "xmdAscii",             2);
+  xmdSetRadioControlValue( "xmdBlendShapes",       1);
+  xmdSetRadioControlValue( "xmdCameras",           2);
+  xmdSetRadioControlValue( "xmdStripNamespaces",   1);
+  xmdSetRadioControlValue( "xmdClusters",          2);
+  xmdSetRadioControlValue( "xmdConstraints",       2);
+  xmdSetRadioControlValue( "xmdCompact",           2);
+  xmdSetRadioControlValue( "xmdFields",            2);
+  xmdSetRadioControlValue( "xmdIk",                2);
+  xmdSetRadioControlValue( "xmdJointClusters",     2);
+  xmdSetRadioControlValue( "xmdLattices",          2);
+  xmdSetRadioControlValue( "xmdLayers",            2);
+  xmdSetRadioControlValue( "xmdLights",            2);
+  xmdSetRadioControlValue( "xmdLocators",          2);
+  xmdSetRadioControlValue( "xmdMaterials",         2);
+  xmdSetRadioControlValue( "xmdMeshVtxColours",    2);
+  xmdSetRadioControlValue( "xmdMeshVtxNormals",    1);
+  xmdSetRadioControlValue( "xmdMeshVtxUvCoords",   2);
+  xmdSetRadioControlValue( "xmdMeshes",            1);
+  xmdSetRadioControlValue( "xmdNonLinear",         2);
+  xmdSetRadioControlValue( "xmdNurbsCurves",       2);
+  xmdSetRadioControlValue( "xmdNurbsSurfaces",     2);
+  xmdSetRadioControlValue( "xmdParticles",         2);
+  xmdSetRadioControlValue( "xmdRenderLayers",      2);
+  xmdSetRadioControlValue( "xmdSelective",         2);
+  xmdSetRadioControlValue( "xmdObjectSets",        2);
+  xmdSetRadioControlValue( "xmdShaders",           2);
+  xmdSetRadioControlValue( "xmdSkinning",          1);
+  xmdSetRadioControlValue( "xmdTextures",          2);
+  xmdSetRadioControlValue( "xmdVolumes",           2);
+  xmdSetRadioControlValue( "xmdTimeline",          1);
+  xmdSetRadioControlValue( "xmdWire",              2);
+  xmdSetRadioControlValue( "xmdWrap",              2);
+  xmdSetRadioControlValue( "xmdJiggle",            2);
+  xmdSetRadioControlValue( "xmdSculpt",            2);
+  xmdSetRadioControlValue( "xmdScaling",           1);
+  xmdSetRadioControlValue( "xmdTextureFiltering",  2);
+  xmdSetRadioControlValue( "xmdFbxSkinFix",        2);
+  xmdSetRadioControlValue( "xmdExportTopLevelInWS", 2);
+  xmdSetRadioControlValue( "xmdDynamicKeyableAttributes", 1);
+  xmdSetRadioControlValue( "xmdDynamicNonkeyableAttributes", 2);
+  xmdSetRadioControlValue( "xmdExportXTD",         1);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  Sets the export options to the minimum required for a morpheme anim.
+//----------------------------------------------------------------------------------------------------------------------
+global proc MorphemeAnimPreset()
+{
+  xmdSetRadioControlValue( "xmdAnimation",         1);
+  xmdSetRadioControlValue( "xmdAscii",             2);
+  xmdSetRadioControlValue( "xmdBlendShapes",       1);
+  xmdSetRadioControlValue( "xmdCameras",           2);
+  xmdSetRadioControlValue( "xmdStripNamespaces",   1);
+  xmdSetRadioControlValue( "xmdClusters",          2);
+  xmdSetRadioControlValue( "xmdConstraints",       2);
+  xmdSetRadioControlValue( "xmdCompact",           2);
+  xmdSetRadioControlValue( "xmdFields",            2);
+  xmdSetRadioControlValue( "xmdIk",                2);
+  xmdSetRadioControlValue( "xmdJointClusters",     2);
+  xmdSetRadioControlValue( "xmdLattices",          2);
+  xmdSetRadioControlValue( "xmdLayers",            2);
+  xmdSetRadioControlValue( "xmdLights",            2);
+  xmdSetRadioControlValue( "xmdLocators",          2);
+  xmdSetRadioControlValue( "xmdMaterials",         2);
+  xmdSetRadioControlValue( "xmdMeshVtxColours",    2);
+  xmdSetRadioControlValue( "xmdMeshVtxNormals",    2);
+  xmdSetRadioControlValue( "xmdMeshVtxUvCoords",   2);
+  xmdSetRadioControlValue( "xmdMeshes",            2);
+  xmdSetRadioControlValue( "xmdNonLinear",         2);
+  xmdSetRadioControlValue( "xmdNurbsCurves",       2);
+  xmdSetRadioControlValue( "xmdNurbsSurfaces",     2);
+  xmdSetRadioControlValue( "xmdParticles",         2);
+  xmdSetRadioControlValue( "xmdRenderLayers",      2);
+  xmdSetRadioControlValue( "xmdSelective",         2);
+  xmdSetRadioControlValue( "xmdObjectSets",        2);
+  xmdSetRadioControlValue( "xmdShaders",           2);
+  xmdSetRadioControlValue( "xmdSkinning",          1);
+  xmdSetRadioControlValue( "xmdTextures",          2);
+  xmdSetRadioControlValue( "xmdVolumes",           2);
+  xmdSetRadioControlValue( "xmdTimeline",          1);
+  xmdSetRadioControlValue( "xmdWire",              2);
+  xmdSetRadioControlValue( "xmdWrap",              2);
+  xmdSetRadioControlValue( "xmdJiggle",            2);
+  xmdSetRadioControlValue( "xmdSculpt",            2);
+  xmdSetRadioControlValue( "xmdScaling",           1);
+  xmdSetRadioControlValue( "xmdTextureFiltering",  2);
+  xmdSetRadioControlValue( "xmdFbxSkinFix",        2);
+  xmdSetRadioControlValue( "xmdExportTopLevelInWS", 2);
+  xmdSetRadioControlValue( "xmdDynamicKeyableAttributes", 1);
+  xmdSetRadioControlValue( "xmdDynamicNonkeyableAttributes", 2);
+  xmdSetRadioControlValue( "xmdExportXTD",         2);
+
+  optionMenuGrp -e -sl 1 animTakeOptions;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  This function creates a simple window that displays some help info for the InheritedNode lua command.
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdInheritedHelp()
+{
+  string $help_string = 
+  
+
+           "\tWhen inheriting a node, you are basically adding a few additional\n"   +
+         "attributes to a node type and re-defining the chunk header that will\n"    +
+         "be written out to the exported file. As an example, Lets assume that we \n"   +
+         "have a game engine capable of 3D sound. We may want to place simple\n"     +
+         "ambient sounds around the level in various locations. Whilst the ideal\n"   +
+         "solution might be to write a plugin that uses either direct sound or fmod\n"   +
+         "to give you an accurate feel of how the sounds work in the level, this is\n"   +
+         "often not possible due to time contraints, or work required elsewhere.\n\n"   +
+         
+          "\tTo handle this sort of situation, you can make use of an InheritedNode\n"+
+         "Lets assume we started with a simple mel procedure that creates a simple\n"   +
+         "locator node and adds two attributes, \"volume\" and \"soundfile\". At a\n"   +
+         "basic level, this might be enough to start placing 3D sound's within the\n"  +
+         "scene.\n\n"                                   +
+         
+         "\tproc string MakeSoundNode()\n"                         +
+         "\t{\n"                                     +
+         
+           "\t\t// create the locator node\n"                     +
+           "\t\t$locatorXform = `spaceLocator -p 0 0 0`;\n\n"             +
+           
+           "\t\t// get the locator shape underneath the locators transform.\n"     +
+           "\t\tstring $nodes[] = `listRelatives -c -s $locatorXform`;\n\n"      +
+
+           "\t\t// add the attributes to the locator shape\n"             +
+           "\t\taddAttr -ln volume -at double  -min 0 -max 1 -dv 1 $nodes[0];\n"     +
+           "\t\tsetAttr -e -keyable true ($nodes[0]+\".volume\");\n"           +
+           "\t\taddAttr -ln soundfile -dt \"string\" $nodes[0];\n"           +
+           "\t\tsetAttr -e -keyable true ($nodes[0]+\".soundfile\");\n\n"       +
+           
+           "\t\treturn $locatorXform;\n"                         +
+           
+         "\t}\n\n"                                     +
+
+         
+          "\tBasically, we may want to say something like, \"if a locator node has\n" +
+         "a volume and a soundfile attribute, then export it as a 3D_SOUND_NODE\".\n"   +
+         "Using an inherited node, this is exactly what we can do, ie :\n\n"       +
+         
+         "\tInheritedNode {\n"                               +
+         "\t\t_type=\"locator\",\n"                             +
+         "\t\t_header=\"3D_SOUND_NODE\",\n"                         +
+         "\t\tvolume=\"float\",\n"                             +
+         "\t\tsoundfile=\"string\"\n"                           +
+         "\t};\n\n"                                   +
+         
+          "\tWhenever the exporter now comes across a \"locator\" node, it will\n"   +
+         "check to see if it has \"volume\" and \"soundfile\" attributes. If it does,\n"+
+         "then it will write the locator node and its extra attributes to the file\n"   +
+         "as a 3D_SOUND_NODE chunk rather than a LOCATOR chunk.\n\n"           +
+         
+         "Hope that makes sense, rob.\n";
+         
+  window -title "InheritedNode Help" -w 550 -h 800;
+    $f = `formLayout`;
+      $s = `scrollField -en false -h 500 -tx $help_string`;
+
+    formLayout -edit 
+          -attachForm $s "left" 0 
+          -attachForm $s "top" 0 
+          -attachForm $s "right" 0 
+          -attachForm $s "bottom" 0
+          $f;
+  
+  showWindow;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  This function creates a simple window that displays some help info for the NewNode lua command.
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdNewHelp()
+{
+  string $help_string = 
+  
+          "\tWhen you want to add in a custom plugin node into maya, you may\n"    +
+         "be able to extract all of the attributes using the NewNode lua call. For\n"   +
+         "nodes that have complex attribute connections, you may still have to change\n"+
+         "the way the exporter works. Hopefully though, the number of times you need\n"  +
+         "to re-compile the plugin should be minimal.\n\n"                +
+
+          "\tThe NewNode must be catagorised into one of 4 catagories. These are\n"   +
+         "designed to help output the nodes in a generic fashion, at an appropriate\n"  +
+         "place in the exporter. These catagories (base types) are defined as:\n\n"    +
+
+         "\tmaterial:    the new node is a material and may be applied to a surface\n"  +
+         "\tshape:       the new node is parented under a transform\n"          +
+         "\ttransform:   the new node is a transform\n"            +
+         "\tdeformer:    the new node is a deformer\n"            +
+         "\tanim:        the new node should be exported in the animation block\n\n"  +
+         
+           "\tAs an example, consider the following definition that adds anisotropic\n"+
+         "material support into the exporter\n\n"                    +
+         
+         "\tNewNode\n"                                   +
+         "\t{\n"                                     +
+         "\t\t_type\t= \"anisotropic\",\n"                         +
+         "\t\t_base\t= \"material\",\n"                          +
+         "\t\t_header\t= \"ANISOTROPIC\",\n\n"                        +
+           
+         "\t\tcolor\t= \"colour\",\n"                            +
+         "\t\ttransparency\t= \"colour\",\n"                        +
+         "\t\tambientColor\t= \"colour\",\n"                        +
+         "\t\tincandescence\t= \"colour\",\n"                        +
+         "\t\tspecularColor\t= \"colour\",\n\n"                      +
+           
+         "\t\tdiffuse\t= \"float\",\n"                          +
+         "\t\tangle\t= \"float\",\n"                            +
+         "\t\tspreadX\t= \"float\",\n"                           +
+         "\t\tspreadY\t= \"float\",\n"                          +
+         "\t\troughness\t= \"float\",\n"                         +
+         "\t\tfresnelIndex\t= \"float\"\n"                        +
+         "\t}\n\n"                                    +
+
+         "\tThis will now extract all anistropic materials from the scene and\n"     +
+         "export them into the file. We define the base type as \"material\" for what\n"+
+         "should be a fairly obvious reason. We also define the output chunk header\n"  +
+         "as well as \"ANISOTROPIC\" and then simply list the attributes we want to\n"  +
+         "extract.\n\n"                                  +
+         
+         "\tThe attribute type can be one of the following:\n\n"            +
+         
+         "\tbool\n"                                   +
+         "\tcolour\n"                                   +
+         "\tfloat\n"                                   +
+         "\tfloat3\n"                                   +
+         "\tint\n"                                     + 
+         "\tmatrix\n"                                   +
+         "\tmessage\n"                                   +
+         "\tstring\n"                                   +
+         "\tvector<bool>\n"                               +
+         "\tvector<colour>\n"                               +
+         "\tvector<float>\n"                               +
+         "\tvector<int>\n"                                 +
+         "\tvector<float3>\n"                               +
+         "\tvector<matrix>\n"                               +
+         "\tvector<message>\n"                               +
+         "\tvector<string>\n\n"                             +
+
+           "\tThese types do not specify the maya types, but rather the types\n"     +
+         "that the exporter will gather them as. Note that vector<bool> means an array\n"+ 
+         "of bools!\n\n"                                 ;
+         
+  window -title "NewNode Help" -w 550 -h 800;
+    $f = `formLayout`;
+      $s = `scrollField -en false -h 500 -tx $help_string`;
+
+    formLayout -edit 
+          -attachForm $s "left" 0 
+          -attachForm $s "top" 0 
+          -attachForm $s "right" 0 
+          -attachForm $s "bottom" 0
+          $f;
+  
+  showWindow;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  This function is used to read the lua script file from the disk when we need to display the lua script 
+///         file in the exporter option screen.
+/// \param  $filename  -  the name of the lua file to load
+/// \return  the file contents as a string
+//----------------------------------------------------------------------------------------------------------------------
+proc string ReadLuaFile(string $filename)
+{
+  string $contents="";
+  if (!catchQuiet( $fp = `fopen $filename "r"` ))
+  {
+    if( $fp == 0 )
+    {
+      print("[warning] Lua file not found \""+$filename+"\"\n");
+      return "";
+    }
+    while( !feof($fp) )
+    {
+      $str = `fgetline $fp`;
+      if($str != "\0" && $str != "\r")
+        $contents += $str;
+    }
+    fclose($fp);
+  }
+  return $contents;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  The exporter saves a default lua script in the users preference directory. This file is called 
+///         "xmdOptions.lua". If it exists then the exporter will by default use it. (even the command line and mel 
+///         function versions of the exporter)
+/// \param  $contents  -  the name of the lua file to load
+/// \return nothing
+//----------------------------------------------------------------------------------------------------------------------
+proc WriteDefaultLuaFile(string $contents)
+{
+  $filename = (`internalVar -upd` + "xmdOptions.lua");
+
+  if(!catchQuiet($fp = `fopen $filename "w"`))
+  {
+    if( $fp == 0 )
+    {
+      print("[warning] Unable to open output file \""+$filename+"\"\n");
+      return;
+    }
+    fprint $fp $contents;  
+    fclose($fp);
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdMakeRadioButtonGrpLabelled(string $label,string $ctrlName,string $annotation,string $on,string $off)
+{
+  radioButtonGrp 
+    -bgc 0.7 0.8 0.9
+    -l $label
+    -nrb 2  -cw3 175 75 75
+    -ann $annotation
+    -la2 $on $off
+    -sl 1 $ctrlName;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  creates a radio button control with On/Off labels. 
+/// \param  $label - the text label for the control
+/// \param  $ctrlName - the name of the control
+/// \param  $annotation - annotation string
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdMakeRadioButtonGrp(string $label,string $ctrlName,string $annotation)
+{
+  xmdMakeRadioButtonGrpLabelled($label,$ctrlName,$annotation,"On","Off");
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  initialises the value of the GUI control
+/// \param  $ctrlName - the name of the control
+/// \param  $flag - the flag value to test
+/// \param  $flag2 - input flag to test
+/// \param  $value - the option value
+//----------------------------------------------------------------------------------------------------------------------
+global proc int xmdInitRadioControlValue(string $ctrlName,string $flag,string $flag2,string $value)
+{
+  if ($flag == $flag2)
+  {
+    if($value == "0")
+      radioButtonGrp -e -sl 2 $ctrlName;
+    else
+      radioButtonGrp -e -sl 1 $ctrlName;
+    return 1;
+  }
+  return 0;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  sets the value of the GUI control
+/// \param  $ctrlName - the name of the control
+/// \param  $value - the option value, 2 is false, 1 is true
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdSetRadioControlValue(string $ctrlName, int $value)
+{
+  radioButtonGrp -e -sl $value $ctrlName;
+}
+
+global proc string xmdAddOption(string $flag,string $ctrl)
+{
+  if(`radioButtonGrp -q -sl $ctrl`==1)
+    return ($flag+"=1;");
+  return ($flag+"=0;");
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  this function generates the XMD export GUI. 
+/// \param  $contents  -  the name of the lua file to load
+/// \return nothing
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdMakeGui(string $parent) 
+{
+  setParent $parent;
+
+    $xmdMainForm = `formLayout`;
+
+      //-------------------------------------------------------------------
+      //  Scene Properties
+      //
+      $fr0 = `frameLayout -w 300 -cl true -cll true -l "Scene Properties" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+        
+          optionMenuGrp -cal 1 "right" -label "XMD Version" -cw2 175 75 -bgc 0.7 0.8 0.9 xmdXMDVersion;
+          menuItem -label "2";
+          menuItem -label "3";
+          menuItem -label "4";
+          menuItem -label "5";
+          optionMenuGrp -e -sl 4 xmdXMDVersion;
+          xmdMakeRadioButtonGrpLabelled("XMD File Type","xmdAscii","If true, file will be written as ascii","Ascii","Binary");
+          xmdMakeRadioButtonGrp("Display Layers","xmdLayers","If true, display layers will be exported from the scene");
+          xmdMakeRadioButtonGrp("Render Layers","xmdRenderLayers","If true, render layers will be exported from the scene");
+          xmdMakeRadioButtonGrp("Object Sets","xmdObjectSets","If true, object sets will be exported from the scene");
+          xmdMakeRadioButtonGrp("Strip Namespaces","xmdStripNamespaces","If true, namespaces will be removed from all nodes");
+          xmdMakeRadioButtonGrp("Custom Keyable Attributes","xmdDynamicKeyableAttributes","If true, any dynamic keyable attributes found on a node will also be exported");
+          xmdMakeRadioButtonGrp("Custom Nonkeyable Attributes","xmdDynamicNonkeyableAttributes","If true, any dynamic nonkeyable attributes found on a node will also be exported");
+          xmdMakeRadioButtonGrp("Selected Nodes are Top Level","xmdExportTopLevelInWS","If true, when exporting selected nodes, those top level nodes will be output in world space");
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Scaling Properties
+      //
+      $fr1 = `frameLayout -w 300 -cl true -cll true -l "Scaling Properties" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+          xmdMakeRadioButtonGrp("Convert Scale To Translation","xmdScaling","If true, all scale will be baked out of the exported file");
+          floatFieldGrp
+              -bgc 0.7 0.8 0.9
+              -en1 true
+              -pre 4
+              -l "Scale Factor"
+              -v1 1.0
+              -ann "Applies a uniform scale factor to all distance and translation attributes"
+              -w 325
+              xmdScaleFactor;
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Surface Properties
+      //
+      $fr2 = `frameLayout -w 300 -cl true -cll true -l "Surface Properties" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+          xmdMakeRadioButtonGrp("Materials","xmdMaterials","If true, materials will be exported from the scene");
+          xmdMakeRadioButtonGrp("Textures","xmdTextures","If true, textures will be exported from the scene (as an *.xtd file if using ascii. As part of the *.xld if binary)");
+          xmdMakeRadioButtonGrp("HwShaders","xmdShaders","If true, hardware shader nodes will be exported from the scene. Note, no nodes of this type are supported by default. Use the NewNode mechanism to export these");
+          xmdMakeRadioButtonGrp("Texturing Information","xmdTextureFiltering","If true, texture placement nodes will have additional information about the texture filtering used");
+          xmdMakeRadioButtonGrp("Texture Image Data","xmdExportXTD","If true, used textures will be written to a separate .xtd file");
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Shape Properties
+      //
+      $fr3 = `frameLayout -w 300 -cl true -cll true -l "Shapes" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+          xmdMakeRadioButtonGrp("Cameras","xmdCameras","If true, cameras will be exported from the scene");
+          xmdMakeRadioButtonGrp("Lights","xmdLights","If true, lights will be exported from the scene");
+          xmdMakeRadioButtonGrp("Locators","xmdLocators","If true, locator nodes will be exported from the scene");
+          xmdMakeRadioButtonGrp("Meshes","xmdMeshes","If true, polygonal meshes will be exported from the scene");
+          xmdMakeRadioButtonGrp("Nurbs Curves","xmdNurbsCurves","If true, NURBS curves will be exported from the scene");
+          xmdMakeRadioButtonGrp("Nurbs Surfaces","xmdNurbsSurfaces","If true, NURBS surfaces will be exported from the scene");
+          xmdMakeRadioButtonGrp("Volume Primitives","xmdVolumes","If true, volume primitives will be exported from the scene");
+          xmdMakeRadioButtonGrp("Mesh Vertex Colours","xmdMeshVtxColours","If true, mesh vertex colours will be exported from the scene");
+          xmdMakeRadioButtonGrp("Mesh Vertex Normals","xmdMeshVtxNormals","If true, mesh vertex normals will be exported from the scene");
+          xmdMakeRadioButtonGrp("Mesh Texture Coords","xmdMeshVtxUvCoords","If true, mesh texture co-ordinates will be exported from the scene");
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Transform Properties
+      //
+      $fr4 = `frameLayout -w 300 -cl true -cll true -l "Transforms" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+          xmdMakeRadioButtonGrp("Extract Important Xforms Only","xmdSelective","If true, only ");
+          xmdMakeRadioButtonGrp("Constraints","xmdConstraints","If true, constraints will be exported from the scene");
+          xmdMakeRadioButtonGrp("IK Chains","xmdIk","If true, ik chains will be exported from the scene");
+          xmdMakeRadioButtonGrp("Remove Orients & Pivots","xmdCompact","If true, transform pivots and joint orients will be removed from the exported data");
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Deformer Properties
+      //
+      $fr5 = `frameLayout -w 300 -cl true -cll true -l "Deformers" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+          xmdMakeRadioButtonGrp("Blend Shapes","xmdBlendShapes","Enables/Disables export of blend shape deformers");
+          xmdMakeRadioButtonGrp("Clusters","xmdClusters","Enables/Disables export of cluster deformers");
+          xmdMakeRadioButtonGrp("Jiggle Deformers","xmdJiggle","Enables/Disables export of jiggle deformers");
+          xmdMakeRadioButtonGrp("Lattices","xmdLattices","Enables/Disables export of lattice (FFD) deformers");
+          xmdMakeRadioButtonGrp("Rigid Skinning","xmdJointClusters","Enables/Disables export of rigid skinning (joint clusters)");
+          xmdMakeRadioButtonGrp("Smooth Skinning","xmdSkinning","Enables/Disables export of smooth skinning (skin clusters)");
+          xmdMakeRadioButtonGrp("Non-Linear Deformers","xmdNonLinear","Enables/Disables export of non linear deformers");
+          xmdMakeRadioButtonGrp("Wire Deformers","xmdWire","Enables/Disables export of wire deformers");
+          xmdMakeRadioButtonGrp("Wrap Deformers","xmdWrap","Enables/Disables export of wrap deformers");
+          xmdMakeRadioButtonGrp("Sculpt Deformers","xmdSculpt","Enables/Disables export of sculpt deformers");
+          xmdMakeRadioButtonGrp("Use Fbx Skinning fix","xmdFbxSkinFix","The Fbx importer does not create valid bind pose information. Use this option to correct the problem.");
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Dynamics Properties
+      //
+      $fr6 = `frameLayout -w 300 -cl true -cll true -l "Dynamics" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+          xmdMakeRadioButtonGrp("Dynamics Fields","xmdFields","Enables/Disables export of dynamics fields");
+          xmdMakeRadioButtonGrp("Particles","xmdParticles","Enables/Disables export of particle systems");
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Animation Properties
+      //
+      $fr7 = `frameLayout -w 500 -cl true -cll true -l "Animation" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+
+          xmdMakeRadioButtonGrp("Animation","xmdAnimation","Enables/Disables export of animation data");
+       
+          optionMenuGrp -cal 1 "right" -label "Animation Format Options" -cw2 175 175 -bgc 0.7 0.8 0.9 animTakeOptions;
+            menuItem -label "Sample Keys";
+            menuItem -label "Maya FCurves";
+            menuItem -label "Sample Keys & Maya FCurves";
+          optionMenuGrp -e -sl 1 animTakeOptions;
+
+          xmdMakeRadioButtonGrp("Use Timeline Range","xmdTimeline","If true, the animation timeline will be used to determine the animation range");
+
+          floatField
+            -bgc 0.7 0.8 0.9
+            -w 325
+            xmdStartTime;
+
+          floatField
+            -bgc 0.7 0.8 0.9
+            -w 325
+            xmdEndTime;
+
+          textFieldGrp
+            -cal 1 "right"
+            -label "Default Take Name"
+            -cw2 175 175
+            -bgc 0.7 0.8 0.9
+            -text "untitled"
+            xmdDefaultTakeName;
+          xmdMakeRadioButtonGrp("Use File Name for Takes", "xmdUseFileNameTake", "If true, the animation take name will be the filename");
+        setParent ..;
+      setParent ..;
+
+      //-------------------------------------------------------------------
+      //  Lua Extensions
+      //
+      $fr8 = `frameLayout -w 300 -cl true -cll true -l "Lua Extensions" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+          string $script = ReadLuaFile( (`internalVar -upd` + "xmdOptions.lua") );
+          $sf = `scrollField -h 400 -tx $script -ed true xmdLuaScript`;
+          
+          rowLayout -nc 3;
+            button -al "center" -l "Extended Help" -c "xmdExtendedHelp;" -w 120  -bgc  0.7 0.8 0.9;
+            button -al "center" -l "Inherited Help" -c "xmdInheritedHelp;" -w 120 -bgc  0.7 0.8 0.9;
+            button -al "center" -l "New Help" -c "xmdNewHelp;" -w 120 -bgc  0.7 0.8 0.9;
+          setParent ..;
+        setParent ..;          
+      setParent ..;
+      
+      //-------------------------------------------------------------------
+      //  Presets
+      //
+      $fr9 = `frameLayout -w 300 -cl true -cll true -l "Presets" -bgc 0.5 0.65 0.8`;
+      columnLayout -adj true;
+      rowLayout -nc 2;
+        button -al "center" -l "Morpheme Rig" - c "MorphemeRigPreset;" -w 85  -bgc  0.7 0.8 0.9;
+        button -al "center" -l "Morpheme Animation" - c "MorphemeAnimPreset;" -w 120  -bgc  0.7 0.8 0.9;
+      setParent ..;
+        setParent ..;
+      setParent ..;
+
+    formLayout  -edit
+    
+           -attachForm     $fr0     "top"    0
+           -attachForm     $fr0     "left"   0
+           -attachNone     $fr0     "bottom"
+           -attachForm     $fr0     "right"  0
+           
+           -attachControl  $fr1     "top"    0 $fr0
+           -attachForm     $fr1     "left"   0
+           -attachNone     $fr1     "bottom"
+           -attachForm     $fr1     "right"  0
+
+           -attachControl  $fr2     "top"    0 $fr1
+           -attachForm     $fr2     "left"   0
+           -attachNone     $fr2     "bottom"
+           -attachForm     $fr2     "right"  0
+
+           -attachControl  $fr3     "top"    0 $fr2
+           -attachForm     $fr3     "left"   0
+           -attachNone     $fr3     "bottom"
+           -attachForm     $fr3     "right"  0
+
+           -attachControl  $fr4     "top"    0 $fr3
+           -attachForm     $fr4     "left"   0
+           -attachNone     $fr4     "bottom"
+           -attachForm     $fr4     "right"  0
+
+           -attachControl  $fr5     "top"    0 $fr4
+           -attachForm     $fr5     "left"   0
+           -attachNone     $fr5     "bottom"
+           -attachForm     $fr5     "right"  0
+
+           -attachControl  $fr6     "top"    0 $fr5
+           -attachForm     $fr6     "left"   0
+           -attachNone     $fr6     "bottom"
+           -attachForm     $fr6     "right"  0
+
+           -attachControl  $fr7     "top"    0 $fr6
+           -attachForm     $fr7     "left"   0
+           -attachNone     $fr7     "bottom"
+           -attachForm     $fr7     "right"  0
+           
+           -attachControl  $fr9     "top"    0 $fr7
+           -attachForm     $fr9     "left"   0
+           -attachNone     $fr9     "bottom"
+           -attachForm     $fr9     "right"  0
+
+           -attachControl  $fr8     "top"    0 $fr9
+           -attachForm     $fr8     "left"   0
+           -attachForm     $fr8     "bottom" 0
+           -attachForm     $fr8     "right"  0
+           
+           $xmdMainForm;
+}
+
+//-------------------------------------------------------------------------------
+/// \brief  This function recieves all of the currently set exporter options by
+///     providing us with a single text string that contains all of the options.
+///     This function splits apart the string (using a plugin mel func) 
+///     and then sets the current state of all the user interface controls.
+/// \param  $initialSettings  -  the current exporter options
+///
+global proc xmdOptionsToGui(string $initialSettings)
+{
+  string  $optionList[];
+  string  $obd[];
+  int    $index;
+
+  // Now set to current settings.
+  $optionList = `mexOptionHack $initialSettings`;
+  $sz = size($optionList);
+  for ($index = 0; $index < $sz; $index+=2)
+  {
+    $obd[0] = $optionList[$index];
+    $obd[1] = $optionList[$index+1];
+
+    if(xmdInitRadioControlValue( "xmdAnimation",         "-anim",             $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdAscii",             "-ascii",            $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdBlendShapes",       "-blendshape",       $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdCameras",           "-camera",           $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdClusters",          "-clusters",         $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdConstraints",       "-constraints",      $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdCompact",           "-compact",          $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdFields",            "-field",            $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdIk",                "-ik",               $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdJointClusters",     "-jointcluster",     $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdLattices",          "-lattice",          $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdLayers",            "-layers",           $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdLights",            "-light",            $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdLocators",          "-locator",          $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdMaterials",         "-material",         $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdMeshVtxColours",    "-vtxcolours",       $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdMeshVtxNormals",    "-vtxnormals",       $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdMeshVtxUvCoords",   "-vtxuvs",           $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdMeshes",            "-mesh",             $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdNonLinear",         "-nonlinear",        $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdNurbsCurves",       "-nurbscurve",       $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdNurbsSurfaces",     "-nurbssurface",     $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdParticles",         "-particles",        $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdRenderLayers",      "-rlayers",          $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdSelective",         "-selective",        $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdObjectSets",        "-sets",             $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdShaders",           "-shaders",          $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdSkinning",          "-skinning",         $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdTextures",          "-textures",         $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdVolumes",           "-volumes",          $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdTimeline",          "-timeline",         $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdWire",              "-wire",             $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdWrap",              "-wrap",             $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdJiggle",            "-jiggle",           $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdSculpt",            "-sculpt",           $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdScaling",           "-remove_scale",     $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdTextureFiltering",  "-texture_filtering",$obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdFbxSkinFix",        "-fbxskinfix",       $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdDynamicKeyableAttributes",    "-dynamic_keyable_attrs",    $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdDynamicNonkeyableAttributes", "-dynamic_nonkeyable_attrs", $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdStripNamespaces",   "-stripNamespaces",  $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdExportTopLevelInWS","-exportTopLevelInWorldSpace",  $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdUseFileNameTake",   "-useFileNameTake",  $obd[0],$obd[1])) continue;
+    if(xmdInitRadioControlValue( "xmdExportXTD",         "-export_xtd",       $obd[0],$obd[1])) continue;
+
+    if ($obd[0] == "-start")
+    {
+      float $f = $obd[1];
+      floatField -e -v $f xmdStartTime;
+    }
+    else
+    if ($obd[0] == "-end")
+    {
+      float $f = $obd[1];
+      floatField -e -v $f xmdEndTime;
+    }
+    else
+    if ($obd[0] == "-scaling_factor")
+    {
+      float $f = $obd[1];
+      floatFieldGrp -e -v1 $f xmdScaleFactor;
+    }
+    else
+    if ($obd[0] == "-xmd_version")
+    {
+      int $version = $obd[1];
+      optionMenuGrp -e -sl ($version-1) xmdXMDVersion;
+    }
+    else
+    if ($obd[0] == "-animTakeOptions")
+    {
+      int $version = $obd[1];
+      optionMenuGrp -e -sl ($version) animTakeOptions;
+    }
+    else
+    if ($obd[0] == "-takeName")
+    {
+      string $s = $obd[1];
+      textFieldGrp -e -text $s xmdDefaultTakeName;
+    }
+    else
+    {
+      if($obd[0]=="-sounds")
+      {
+        // just disable warning for deprecated flag. 
+      }
+      else
+      if ($obd[0] == "-xmd_old_mesh")
+      {
+        // no ui for old mesh option
+      }
+      else
+        warning ("unknown XMD option: " + $obd[0] + "\n");
+    }
+  }
+}
+
+//-------------------------------------------------------------------------------
+/// \brief  We need to send the exporter options from the values currently held
+///     in the UI controls, through to the exporter by creating a rather 
+///     large text string to hold the options.
+/// \return  The exporter options as a text string.
+///
+global proc string xmdGuiToOption()
+{
+  // save any changes that have been made to exporter script.
+  $contents = `scrollField -q -tx xmdLuaScript`;
+  WriteDefaultLuaFile($contents);
+
+  // build a new option string
+  string $currentOptions = "";
+  
+  $currentOptions += xmdAddOption("-anim",             "xmdAnimation");
+  $currentOptions += xmdAddOption("-ascii",            "xmdAscii");
+  $currentOptions += xmdAddOption("-vtxuvs",           "xmdMeshVtxUvCoords");
+  $currentOptions += xmdAddOption("-blendshape",       "xmdBlendShapes");
+  $currentOptions += xmdAddOption("-camera",           "xmdCameras");
+  $currentOptions += xmdAddOption("-clusters",         "xmdClusters");
+  $currentOptions += xmdAddOption("-constraints",      "xmdConstraints");
+  $currentOptions += xmdAddOption("-compact",          "xmdCompact");
+  $currentOptions += xmdAddOption("-field",            "xmdFields");
+  $currentOptions += xmdAddOption("-ik",               "xmdIk");
+  $currentOptions += xmdAddOption("-jiggle",           "xmdJiggle");
+  $currentOptions += xmdAddOption("-jointcluster",     "xmdJointClusters");
+  $currentOptions += xmdAddOption("-lattice",          "xmdLattices");
+  $currentOptions += xmdAddOption("-layers",           "xmdLayers");
+  $currentOptions += xmdAddOption("-light",            "xmdLights");
+  $currentOptions += xmdAddOption("-locator",          "xmdLocators");
+  $currentOptions += xmdAddOption("-material",         "xmdMaterials");
+  $currentOptions += xmdAddOption("-mesh",             "xmdMeshes");
+  $currentOptions += xmdAddOption("-particles",        "xmdParticles");
+  $currentOptions += xmdAddOption("-vtxcolours",       "xmdMeshVtxColours");
+  $currentOptions += xmdAddOption("-vtxnormals",       "xmdMeshVtxNormals");
+  $currentOptions += xmdAddOption("-nonlinear",        "xmdNonLinear");
+  $currentOptions += xmdAddOption("-nurbscurve",       "xmdNurbsCurves");
+  $currentOptions += xmdAddOption("-nurbssurface",     "xmdNurbsSurfaces");
+  $currentOptions += xmdAddOption("-rlayers",          "xmdRenderLayers");
+  $currentOptions += xmdAddOption("-sculpt",           "xmdSculpt");
+  $currentOptions += xmdAddOption("-sets",             "xmdObjectSets");
+  $currentOptions += xmdAddOption("-selective",        "xmdSelective");
+  $currentOptions += xmdAddOption("-shaders",          "xmdShaders");
+  $currentOptions += xmdAddOption("-skinning",         "xmdSkinning");
+  $currentOptions += xmdAddOption("-textures",         "xmdTextures");
+  $currentOptions += xmdAddOption("-volumes",          "xmdVolumes");
+  $currentOptions += xmdAddOption("-wire",             "xmdWire");
+  $currentOptions += xmdAddOption("-wrap",             "xmdWrap");
+  $currentOptions += xmdAddOption("-timeline",         "xmdTimeline");
+  $currentOptions += xmdAddOption("-remove_scale",     "xmdScaling");
+  $currentOptions += xmdAddOption("-texture_filtering","xmdTextureFiltering");
+  $currentOptions += xmdAddOption("-fbxskinfix",       "xmdFbxSkinFix");
+  $currentOptions += xmdAddOption("-stripNamespaces",  "xmdStripNamespaces");
+  $currentOptions += xmdAddOption("-dynamic_keyable_attrs",    "xmdDynamicKeyableAttributes");
+  $currentOptions += xmdAddOption("-dynamic_nonkeyable_attrs", "xmdDynamicNonkeyableAttributes");
+  $currentOptions += xmdAddOption("-exportTopLevelInWorldSpace", "xmdExportTopLevelInWS");
+  $currentOptions += xmdAddOption("-useFileNameTake",  "xmdUseFileNameTake");
+  $currentOptions += xmdAddOption("-export_xtd",       "xmdExportXTD");
+
+  if (`optionMenuGrp -q -sl xmdXMDVersion` == 1)
+    $currentOptions = $currentOptions + "-xmd_version=2;";
+  else if (`optionMenuGrp -q -sl xmdXMDVersion` == 2)
+    $currentOptions = $currentOptions + "-xmd_version=3;";
+  else if (`optionMenuGrp -q -sl xmdXMDVersion` == 3)
+    $currentOptions = $currentOptions + "-xmd_version=4;";
+  else if (`optionMenuGrp -q -sl xmdXMDVersion` == 4)
+    $currentOptions = $currentOptions + "-xmd_version=5;";
+
+  if (`optionMenuGrp -q -sl animTakeOptions` == 1)
+    $currentOptions = $currentOptions + "-animTakeOptions=1;";
+  else if (`optionMenuGrp -q -sl animTakeOptions` == 2)
+    $currentOptions = $currentOptions + "-animTakeOptions=2;";
+  else if (`optionMenuGrp -q -sl animTakeOptions` == 3)
+    $currentOptions = $currentOptions + "-animTakeOptions=3;";
+
+  $currentOptions = $currentOptions + "-xmd_old_mesh=0;" ;
+  $currentOptions = $currentOptions + "-scaling_factor="   + `floatFieldGrp -q -v1 xmdScaleFactor` + ";"  ;
+  $currentOptions = $currentOptions + "-start=" + `floatField -q -v xmdStartTime` + ";";
+  $currentOptions = $currentOptions + "-end="   + `floatField -q -v xmdEndTime` + ";"  ;
+
+  $currentOptions = $currentOptions + "-takeName=" + `textFieldGrp -q -text xmdDefaultTakeName` + ";";
+   
+  return $currentOptions;
+}
+
+//-------------------------------------------------------------------------------
+/// \brief  This controls the user interface for the maya exporter plugin
+/// \param  $parent  -  a handle to the parent layout UI element. This is always
+///           going to be a scroll layout.
+/// \param  $action  -  "query" or "post"
+/// \param  $opts  -  The last set option string
+/// \param  $rcb  -  the result callback. The name of the function to call
+///           with the results string.
+/// \return  1 if Ok, 0 otherwise
+///
+global proc int MayaFileExportScript( string $parent,
+                      string $action,
+                   string $initialSettings,
+                   string $resultCallback )
+{
+  // if creating the UI
+  if ($action == "post") {
+      
+    // make the user interface{
+    xmdMakeGui($parent);
+
+    // read the values from the current options and set the GUI to display them.
+    xmdOptionsToGui($initialSettings);
+  }
+  else
+  
+  // if reading back options from the UI
+  if ($action == "query")
+  {
+    $option_string = `xmdGuiToOption`;
+    eval( $resultCallback + " \"" + $option_string + "\";" );
+  }
+  else
+    return 0;
+
+  return 1;
+}

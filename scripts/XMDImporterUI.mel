@@ -1,0 +1,145 @@
+//----------------------------------------------------------------------------------------------------------------------
+// Copyright (c) 2010 NaturalMotion.  All Rights Reserved.
+// Not to be copied, adapted, modified, used, distributed, sold,
+// licensed or commercially exploited in any manner without the
+// written consent of NaturalMotion.  
+//
+// All non public elements of this software are the confidential
+// information of NaturalMotion and may not be disclosed to any
+// person nor used for any purpose not expressly approved by
+// NaturalMotion in writing.
+//----------------------------------------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  creates a roadio button in the option GUI
+/// \param  $label - the label for the control
+/// \param  $ctrl - the name of the created control
+/// \param  $annotation - the help text annotation for the control
+/// \param  $on - the text string used for the 'true' result
+/// \param  $off - the text string used for the 'false' result
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdMakeRadioButtonGrpLabelled(string $label, string $ctrlName, string $annotation, string $on, string $off)
+{
+  radioButtonGrp 
+    -bgc 0.7 0.8 0.9
+    -l $label
+    -nrb 2  -cw3 175 75 75
+    -ann $annotation
+    -la2 $on $off
+    -sl 1 $ctrlName;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  initialises the value of the GUI control
+/// \param  $ctrlName - the name of the control
+/// \param  $flag - the flag value to test
+/// \param  $flag2 - input flag to test
+/// \param  $value - the option value
+//----------------------------------------------------------------------------------------------------------------------
+global proc int xmdInitRadioControlValue(string $ctrlName, string $flag, string $flag2, string $value)
+{
+  if ($flag == $flag2)
+  {
+    if($value == "0")
+      radioButtonGrp -e -sl 2 $ctrlName;
+    else
+      radioButtonGrp -e -sl 1 $ctrlName;
+    return 1;
+  }
+  return 0;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  sets the value of the GUI control
+/// \param  $ctrlName - the name of the control
+/// \param  $value - the option value, 2 is false, 1 is true
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdSetRadioControlValue(string $ctrlName, int $value)
+{
+  radioButtonGrp -e -sl $value $ctrlName;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  Adds a new option into the option string
+/// \param  $flag - the XMD option flag
+/// \param  $ctrl - the control name
+//----------------------------------------------------------------------------------------------------------------------
+global proc string xmdAddOption(string $flag, string $ctrl)
+{
+  if(`radioButtonGrp -q -sl $ctrl`==1)
+    return ($flag+"=1;");
+  return ($flag+"=0;");
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  converts the options set in the option gui to an option string for the exporter
+/// \return the option string
+//----------------------------------------------------------------------------------------------------------------------
+global proc string xmdImportGuiToOption() 
+{
+  string $currentOptions = "";
+  $currentOptions += xmdAddOption("-stripKeys", "xmdStripKeys");
+  print $currentOptions;
+  return $currentOptions;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+/// \brief  taes the option string provided, extracts each setting, and sets the related GUI control
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdImportOptionsToGui(string $initialSettings)
+{
+  string $optionList[];
+  string $obd[];
+  int $index;
+  
+  tokenize($initialSettings, ";", $optionList);
+
+  // Now set to current settings.
+  $sz = size($optionList);
+    print ("(sz = " + $sz + ")\n");
+  for ($index = 0; $index < $sz; $index+=2)
+  {
+    tokenize($optionList[$index], "=", $obd);
+    print ("(" + $obd[0] + "," + $obd[1] + ")\n");
+    if( xmdInitRadioControlValue( "xmdStripKeys", "-stripKeys", $obd[0], $obd[1]) )
+      continue;
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+global proc xmdMakeImportGui(string $parent) 
+{
+  setParent $parent;
+    $xmdMainForm = `formLayout`;
+      $fr0 = `frameLayout -w 300 -cl true -cll true -l "XMD Import Options" -bgc 0.5 0.65 0.8`;
+        columnLayout -adj true;
+        
+          xmdMakeRadioButtonGrpLabelled("Strip Key-frames", "xmdStripKeys", "If enabled, redundant keyframes will be stripped on inport", "On", "Off");
+        setParent ..;
+    setParent ..;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+global proc int XMDImporterUI(string $parent, string $action, string $initialSettings, string $resultCallback)
+{
+  // if creating the UI
+  if ($action == "post") 
+  {      
+    // make the user interface
+    xmdMakeImportGui($parent);
+
+    // read the values from the current options and set the GUI to display them.
+    xmdImportOptionsToGui($initialSettings);
+  }
+  else
+  // if reading back options from the UI
+  if ($action == "query")
+  {
+    $option_string = `xmdImportGuiToOption`;
+    eval( $resultCallback + " \"" + $option_string + "\";" );
+  }
+  else
+    return 0;
+
+  return 1;
+}

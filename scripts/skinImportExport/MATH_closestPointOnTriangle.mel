@@ -1,0 +1,110 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_closestPointOnTriangle.mel
+
+>>Author
+
+        Eric Vignola -- 05-14-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Returns the closest point on a given triangle from a given world point.
+
+>>Description
+
+        Given a point in space and two points making a vector, this routine will 
+        return the closest world coord on that vector. Returned coord is confined 
+        to the triangle area.
+
+>>Arguments
+
+        vector $a: First point of triangle.
+        
+        vector $b: Second point of triangle.
+        
+        vector $c: Third point of triangle.
+        
+        vector $p: Point in space to check.
+
+>>Return
+
+        vector -  closest point on triangle
+
+>>Syntax
+
+        
+
+>>Examples
+
+        MATH_closestPointOnTriangle(<<4,3,44>>,<<-4,-4,3>>,<<12,33,-10>>,<<0,0,0>>);
+        
+        // Result: <<-1.761427, 1.1767, 1.181159>>
+
+>>Dependencies
+
+        MATH_pointInTriangle.mel
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+global proc vector MATH_closestPointOnTriangle(vector $a, vector $b, vector $c, vector $p)
+{
+
+	// find normal
+	vector $ab = $b - $a;
+	vector $ac = $c - $a;
+	vector $bc = $c - $b;
+	vector $ca = $a - $c;
+	vector $ap = $p - $a;
+	vector $xyz = $p;
+	
+	vector $n = cross($ab, $ac);
+	
+	float $dist = dot($ap, unit($n));
+		
+	// If we're not already on the plane, project to the plane
+	if ($dist != 0){
+		$xyz = $p - ($dist*unit($n));
+	}
+	
+	// Check to see if we're in the triangle
+	int $check = MATH_pointInTriangle($a, $b, $c, $xyz);
+	
+	if ($check == 1){
+		return $xyz;
+	}
+
+	// Project on three vectors, find closest
+
+
+	
+	vector $pab = MATH_closestPointOnVector($a, $b, $xyz);
+	vector $pbc = MATH_closestPointOnVector($b, $c, $xyz);
+	vector $pca = MATH_closestPointOnVector($c, $a, $xyz);
+	
+
+	float  $fab[] = $pab;
+	float  $fbc[] = $pbc;
+	float  $fca[] = $pca;
+
+	string $test[] = {(mag($xyz-$pab)+"#<<"+$fab[0]+","+$fab[1]+","+$fab[2]+">>"),(mag($xyz-$pbc)+"#<<"+$fbc[0]+","+$fbc[1]+","+$fbc[2]+">>"),(mag($xyz-$pca)+"#<<"+$fca[0]+","+$fca[1]+","+$fca[2]+">>")};
+	
+	// New code using COM_hashSingleSort
+	string $result = COM_hashSingleSort($test);
+	clear $test;
+	tokenize $result "#" $test;
+	vector $return = $test[1];
+
+	return $return;
+
+
+}

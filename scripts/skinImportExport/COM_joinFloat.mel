@@ -1,0 +1,69 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+	COM_joinFloat.mel
+
+>>Author
+
+	Eric Vignola eric_vignola@yahoo.com
+
+>>Synopsis
+
+	Join a list of floating numbers into a string.
+
+>>Description
+
+	Given a list of floating numbers and a delimiter, returns a string 
+	consisting of the float values separated by the delimiter.
+
+>>Arguments
+
+	float $list[]: An array of floating numbers.
+	
+	string $space: The delimiter for the returned string.
+
+>>Return
+
+	string $tmp
+
+>>Syntax
+
+	
+
+>>Examples
+
+	
+
+>>Dependencies
+
+	None.
+
+>>Updates
+
+	
+
+<!--endDoc-->
+
+*/
+
+global proc string COM_joinFloat(float $list[], string $space)
+{
+	string $tmp;
+	int $j = `size($list)`;
+	$j -= 1;
+	
+	for ($i = $j ; $i >= 0 ; $i --)
+	{
+		if ($i == $j)
+		{
+			$tmp = $list[$i];	
+		}else{
+			$tmp = ($list[$i] + $space + $tmp);	
+		}
+
+
+	}
+	return $tmp;
+}
+

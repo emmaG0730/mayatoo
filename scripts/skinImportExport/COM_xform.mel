@@ -1,0 +1,124 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+        COM_xform.mel
+
+>>Author
+
+        Eric Vignola -- 07-17-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Wrapper for xform command
+
+>>Description
+
+        This command allows doing an xform command on multiple nodes. Given a 
+        list of nodes and a string describing the flags given to each xform command, 
+        this script will return the proper results in the case of a query, and in 
+        the case of a "set" command it'll simply return the set positions. The script 
+        will error out if multiple values are assigned to an unmatching amount of 
+        multiple nodes. If only one value is given, all nodes will be set to this value.
+
+>>Arguments
+
+        string $nodes[]: A list of source nodes.
+        
+        string $flags: A string made of the flags passed to the xforms command.
+        
+        vector $new[]: A vector array to set the nodes to (nothing happens if in query mode).
+
+>>Return
+
+        None.
+
+>>Syntax
+
+        
+
+>>Examples
+
+        None.
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        07-24-05: Eric Vignola - Made the command average multiple vector positions 
+                  (special case when querying faces)
+
+<!--endDoc-->
+
+*/
+
+global proc vector[] COM_xform(string $nodes[], string $flags, vector $new[])
+{
+	// init vars
+	vector $result[];
+	float $tmp[];
+	string $cmd;
+	int $query = 0;
+	vector $return[];
+	vector $v[];
+	float $temp[];
+	
+	
+	// test input
+	int $nNodes = size($nodes);
+	int $nNew	= size($new);
+	
+	if ($nNew > 1 && ($nNodes != $nNew)){
+		error ("COM_xform: if more than one new values is submitted, the number must match the number if given nodes.\n");
+	}
+	
+	
+	// Test for query mode
+	if (`gmatch $flags "*-q *"`) $query = 1;
+	
+	
+	for ($i = 0; $i < size($nodes); $i++){
+		clear $tmp;
+		$cmd = "";
+		
+		
+		if ($query == 0){
+			if ($nNew == 1){
+				$tmp = $new[0];
+				$cmd = ("xform "+$flags+" "+$tmp[0]+" "+$tmp[1]+" "+$tmp[2]+" "+$nodes[$i]);
+				$return[$i] = $new[0];
+				
+			}else{
+				$tmp = $new[$i];
+				$cmd = ("xform "+$flags+" "+$tmp[0]+" "+$tmp[1]+" "+$tmp[2]+" "+$nodes[$i]);
+				$return[$i] = $new[$i];
+			}
+			
+			eval($cmd);
+			
+		}else{
+			clear $temp;
+			$cmd = ("xform "+$flags+" "+$nodes[$i]);
+			$temp = eval($cmd);
+			if (size($temp) > 3){
+				int $k = 0;
+				clear $v;
+				for ($j = 0; $j < size($temp); $j+=3){
+					$v[$k] = <<$temp[$j],$temp[$j+1],$temp[$j+2]>>;
+					$k++;
+				}
+				$return[$i] = MATH_vectorAverage($v);
+			}else{
+				$return[$i] = <<$temp[0], $temp[1], $temp[2]>>;
+			
+			}
+		}
+
+	}
+	
+	return $return;
+
+}
+

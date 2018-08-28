@@ -1,0 +1,93 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+        COM_hashSingleSort.mel
+
+>>Author
+
+        Eric Vignola -- 06-06-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Return the smallest val in a hash (<val>#what#ever#you#want)
+
+>>Description
+
+        A variation of COM_hashQuickSort that uses the sort command to speedup lookup. And then parses 
+        the array to match the distance, then returns the match. This is useful when dealing with vast 
+        amounts of data when we only need the closest. On an array of 100000 item, this command was roughly 
+        40% faster than COM_hashQuickSort
+
+>>Arguments
+
+        string $vals[]: A given hash array.
+
+>>Return
+
+        string $val: The closest item in hash array.
+
+>>Syntax
+
+        
+
+>>Examples
+
+        string $hash[] = {"34.545#joint0","2.32343#joint1"};
+        
+        string $closest = COM_hashQuickSort($hash);
+        
+        // returns: "2.32343#joint1"
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+global proc string COM_hashSingleSort(string $vals[])
+{
+	int $size = size($vals);
+	float $floats[],$newFloats[];
+	string $strings[],$newStrings[],$tmp[];
+	string $return;
+	
+	int $t = 0;
+	int $k = 0;
+	
+	if ($size > 1){
+		
+		for ($i = 0; $i < $size; $i++){
+			$t = `tokenize $vals[$i] "#" $tmp`;
+			
+			if ($vals[$i] != ""){
+				$floats[$k] = $tmp[0];
+				for ($j = 1; $j < $t; $j++){
+					$strings[$k] = ($strings[$k]+"#"+$tmp[$j]);
+				}
+				$k++;
+			}
+		}
+
+
+ 		$newFloats = sort($floats);
+ 		
+ 		for ($i = 0; $i < size($newFloats); $i++){
+ 			if ($floats[$i] == $newFloats[0]){
+ 				$return = ($newFloats[0]+$strings[$i]);
+ 				break;
+ 			}
+
+ 		}
+ 	}else{
+ 		return $vals[0];
+	}
+ 
+	return $return;
+}

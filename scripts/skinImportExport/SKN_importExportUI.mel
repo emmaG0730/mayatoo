@@ -1,0 +1,159 @@
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{
+	source "COM_floatToVectorArray.mel";
+	source "COM_hashQuickSort.mel";
+	source "COM_hashSingleSort.mel";
+	source "COM_joinFloat.mel";
+	source "COM_joinString.mel";
+	source "COM_polyInfo.mel";
+	source "COM_pruneVectors.mel";
+	source "COM_splitFloat.mel";
+	source "COM_splitString.mel";
+	source "COM_stringInArray.mel";
+	source "COM_xform.mel";
+	source "MATH_barycentricCoord.mel";
+	source "MATH_closestPointOnLine.mel";
+	source "MATH_closestPointOnTriangle.mel";
+	source "MATH_closestPointOnVector.mel";
+	source "MATH_floatArraySum.mel";
+	source "MATH_floatMultiply.mel";
+	source "MATH_normalize.mel";
+	source "MATH_pointInTriangle.mel";
+	source "MATH_vectorAverage.mel";
+	source "SKN_splineWeights.mel";
+	source "SKN_vertWeightsExport.mel";
+	source "SKN_vertWeightsImport.mel";
+}
+
+
+global proc skin_export()
+{
+
+   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   
+   //-------------------------------//
+   // Create a file name for export //
+   //-------------------------------//
+   
+   // Get weight directory info
+   string $weightFile     = `textFieldGrp -q -tx skinFile`;
+   int    $jointNameSpace = `checkBoxGrp  -q -v1 jointNameSpace`;
+   string $jointPrefix 	  = `textFieldGrp -q -tx jointPrefix`;
+   //int    $geoNameSpace   = `checkBoxGrp  -q -v1 geoNameSpace`;
+   //string $geoPrefix 	  = `textFieldGrp -q -tx geoPrefix`;
+   int    $geoNameSpace   = 0;
+   string $geoPrefix 	  = "";
+   
+   int    $progressBar 	  = `checkBoxGrp  -q -v1 progressBar`;
+   
+   // Set weight file directory info
+
+   //**************************
+   print ($weightFile+"\n");
+   //**************************
+   
+  
+   
+   //-------------------------//
+   // Call the export routine //
+   //-------------------------//
+   string $selection[] = `ls -sl -fl`;
+   
+   SKN_vertWeightsExport($weightFile, $selection, $jointPrefix, $jointNameSpace, $geoPrefix, $geoNameSpace, $progressBar);
+   
+}
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+global proc skin_import()
+{
+   
+   //---------------------------------------//
+   // Collect filename and mode informatoin //
+   //---------------------------------------//
+      
+   // Get data
+   string $weightFile     = `textFieldGrp -q -tx skinFile`;
+   int    $jointNameSpace = `checkBoxGrp -q -v1 jointNameSpace`;
+   string $jointPrefix 	  = `textFieldGrp -q -tx jointPrefix`;
+   //int    $geoNameSpace   = `checkBoxGrp  -q -v1 geoNameSpace`;
+   //string $geoPrefix 	  = `textFieldGrp -q -tx geoPrefix`;
+   
+   int    $geoGroup       = `checkBoxGrp -q -v1 geoGroup`;
+   int    $normalFilter   = `checkBoxGrp -q -v1 normalFilter`;
+   float  $normalAngleTreshold = `floatFieldGrp -q -v1 normalAngleTreshold`;
+   float  $distanceTreshold = `floatFieldGrp -q -v1 distanceTreshold`;
+   int    $vertIndex      = `checkBoxGrp -q -v1 vertIndex`;
+   int    $progressBar 	  = `checkBoxGrp  -q -v1 progressBar`;
+      
+      
+      
+      
+   // If prompt was canceled, exit
+   if ($weightFile == "") error("Must enter a filename for skin import (!)");
+   
+
+
+   //-------------------------//
+   // Call the import routine //
+   //-------------------------//
+   string $selection[] = `ls -sl -fl`;
+   
+   SKN_vertWeightsImport($weightFile, $selection, $jointPrefix, $jointNameSpace, $geoGroup, $vertIndex, $normalFilter, $normalAngleTreshold, $distanceTreshold, $progressBar);
+   
+}
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+global proc open()
+{
+   string $weightFile = `fileDialog -directoryMask "C:/*.vwt"`;
+   textFieldGrp -e -tx $weightFile "skinFile";
+}
+
+global proc SKN_importExportUI()
+{
+   if (`window -exists "SKN_importExportUI"`)
+      deleteUI SKN_importExportUI;
+   
+   window -t "CTG - Character Skin Tool v1.0" "SKN_importExportUI";
+   
+   paneLayout -cn "horizontal3" -ps 1 10 10 -ps 2 10 10 -ps 3 10 80;
+	 button -l "Export Skin Data" -c "skin_export";
+	 button -l "Import Skin Data" -c "skin_import";
+	 columnLayout -adj 1 -cat "both" 20;
+	 	separator -h 15;
+	 
+	 	text -al left "Joints Names:";
+	 	checkBoxGrp -numberOfCheckBoxes 1 -label "Namespace management:" -v1 1 jointNameSpace;
+	 	textFieldGrp -l "Optional Prefix:" jointPrefix;
+	 	separator -h 15;
+	 	
+	 	//text -al left "Geometry Names:";
+	 	//checkBoxGrp -numberOfCheckBoxes 1 -label "Namespace management:" -ed 0 -v1 1s geoNameSpace;
+	 	//textFieldGrp -l "Optional Prefix:" geoPrefix;
+	 	//separator -h 15;
+	 	
+	 	text -al left "Data management:";
+	 	checkBoxGrp -numberOfCheckBoxes 1 -label "Use vert index:" -v1 0			vertIndex;
+	 	checkBoxGrp -numberOfCheckBoxes 1 -label "Geometry data Grouping:" -v1 1	geoGroup;
+	 	checkBoxGrp -numberOfCheckBoxes 1 -label "Normal filter:" -v1 0				normalFilter;
+	 	floatFieldGrp -label "Incidence Treshold:" -v1 60.0							normalAngleTreshold;
+	 	floatFieldGrp -label "Distance  Treshold:" -v1 0.1							distanceTreshold;
+	 	
+	 	//radioButtonGrp -numberOfRadioButtons 3 -label "Approximation Method:" -labelArray3 "Closest Vert" "Vert Neighbors" "Vert Neighborhood" -select 2;
+	 	separator -h 15;
+	 	
+	 	text -al left "Misc Options:";
+	 	checkBoxGrp -numberOfCheckBoxes 1 -label "Progress Bar:" -v1 1 progressBar;
+	 	separator -h 15;
+	 	
+	 	
+	 	textFieldButtonGrp -l "Custom Skin File:" -tx "C:/weights.vwt" -bl "Open" -adj 2 -bc "open()" -ann "Path to the skin data file." skinFile;
+
+	 showWindow;
+            
+   showWindow;
+   
+}

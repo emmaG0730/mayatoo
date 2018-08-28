@@ -1,0 +1,955 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+	SKN_vertWeightsImport.mel
+
+>>Author
+
+	Eric Vignola -- 12-30-04 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+	Modified skin data importer
+
+>>Description
+
+	Part of the procedural build concept. Due to the absence of resources to 
+	create a plug-in to do this, I had to come up with a workaround. This script 
+	and its export counterpart solve the problem of geometry updates on our 
+	character.
+	
+	The script will import a weight file, and then match names for nodes listed 
+	under a group called "geometry." If we have a name match, we use Maya's skin 
+	copy tool to copy weights from the mapFile mesh to the actual mesh. If no match 
+	is found, the new geometry is skinned to a "master" mesh found in the mesh file.
+	
+	Note: The script assumes that all meshes are gouped under a node called "geometry." 
+	(See BOND_charBuildUI.mel line 329 for example calling procedure.)
+
+>>Arguments
+
+	string $weightFile: Directory location for the text file we intend to create
+	
+	Example: string $weightFile = "C:/weights/weights.vwt";
+	
+	string $weightMap: Directory location for a saved copy of the selected geometry
+	
+	Example: string $weightMap = "C:/weights/weights.ma";
+	
+	string $list[]: a list of the geometry in the scene whose weights we wish to export
+	
+	Example: $list[] = {"bond_watch","hands","head","body","tongue", ... }
+	
+	string $jointPrefix: optionally add this string to the joint names
+	
+	Example: joint1 = "joint1" and $jointPrefix = "pre_" -> joint1 = "pre_joint1"
+
+>>Return
+
+
+
+>>Examples
+
+	Type "SKN_vertWeightsImport"
+	Imports data for everything listed under group "geometry."
+
+	Note: Selection has no bearing on the exported geometry.
+
+>>Dependencies
+
+	Meant to complement SKN_weightExport.mel
+	COM_splitString.mel (required)
+
+>>Updates
+
+	07-25-05: ? (Mike Lang)
+	
+	11-20-05: Moved vertex parsing from UI to routine (Eric Vignola)
+
+<!--endDoc-->
+
+*/
+
+global proc int SKN_vertWeightsImport(string $weightFile, string $selection[], string $jointPrefix, int $jointNameSpace, int $geoGroup, int $mode, int $normalFilter, float $normalTreshold, float $distanceTreshold, int $progressBar)
+{  
+
+	 float $start =  `timerX`;
+	 print ("\n>> Beginning Skin Importing Process ...\n");
+	 
+	 
+   // ---------------------------------------------------------------------------------------
+   // WHAT USED TO BE LOCAL TO UI
+   // ---------------------------------------------------------------------------------------
+	
+   //---------------------//
+   // Build a vertex list //
+   //---------------------//
+   string $geoList[], $vertList[];
+   
+   // Make sure we're only taking vertex components	                 
+   $vertList = COM_stringInArray("*.vtx*",$selection,true,true,"","");
+   
+   // Get a list of geometry associated with the selected vertices
+   $vertGeo = COM_stringInArray("*",$vertList,true,false,".vtx.*","");
+   
+   // Get the list of selected transform nodes (i.e. geometry selected as a full object)
+   $geoList = `ls -type "transform" $selection`;
+   
+   // Put geometry's vertices into vert list
+   int $vertCount[];
+   for ($elem in $geoList)
+   {
+      
+      // Check to see if vertices were selected on this geometry
+      int $found = false;
+      for ($node in $vertGeo) {
+         
+         // If there are already vertices from this geo in the list
+         if ($node == $elem) {
+            // Take them out of the list (we'll re-enter them with the rest of this geo's vertices)
+            $vertList = COM_stringInArray("*",$vertList,true,true,($elem+".vtx.*"),"");
+            break;
+         }
+      }
+      
+      // Grab the geometry's vert count (if not a mesh, remove it)
+      if ( catchQuiet($vertCount = `polyEvaluate -v $elem`)) {
+         print("\n");
+         warning ("Transform: "+$elem+" is not a mesh.  Removing it from the export list.");
+         COM_stringInArray("*",$geoList,true,true,($elem+".*"),"");
+      };
+      
+      // Find the starting index for pushing vertices to the list
+      int $nCount = `size $vertList`;
+         
+      // Process every vertex in current geometry
+      for ($i = 0; $i < ($vertCount[0]); $i++)
+      {         
+         $vertList[$nCount++] = ($elem + ".vtx[" + $i + "]");
+      }
+            
+   }
+   
+   //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   // ??? Sort Geometry by size ??? //
+   //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   
+   // ---------------------------------------------------------------------------------------
+   // END OF WHAT USED TO BE LOCAL TO UI
+   // ---------------------------------------------------------------------------------------
+	 
+	 // Exit if there's no geometry to look at
+	 if (`size $vertList` == 0) {
+			error("Empty Vertex List. [ You must select geometry to skin (!) ]");
+	 }
+	 
+	 
+	 
+	 
+			
+	 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	 // ***???Use a dialog for thresholding?***???
+	 float $thresh = 0.3;
+	 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	 
+	 float $baryVerts[], $tmpWeights1[], $tmpWeights2[], $tmpWeights3[], $adjWeights[];
+	 float $closestDist;
+	 
+	 // Open the weight file and setup variables
+	 int $fileId = `fopen $weightFile "r"`;
+	 
+	 int $nCount, $nVerts, $vertIndex, $low, $hi, $selSize, $stretch, $found, $vertSkip;
+	 int $faceList[], $storedVerts[], $shiftSize[], $nodeSize[];
+	 int $one, $two, $three;
+	 int $skipNode = false;
+	 int $nNode = -1;
+	 
+	 string $lastGeo, $jointName, $skinJoints[];
+	 float $vtxJoints[], $ordWeights[];
+	 int $jointMap[];
+	 
+	 string $line, $name, $elem, $vert, $face;
+	 
+	 string $tmp[], $joints[], $tmpJoints[], $jointOrder[], $shape[], $history[], $skinCluster[];
+	 string $adjVerts[], $nodeList[], $baryDist[], $weightList[], $geoList[];
+	 vector $vPos[], $vPoint, $vaVertPos[], $vaVertNormal[], $baryWeights, $vOne, $vTwo, $vThree;
+	 vector $vNormal;
+	 $skinCluster[0] = "noSkinClusterHere_pleaseSkip";
+	 
+	 // Get a list of geometry from the vertex list
+	 clear $geoList;
+	 $geoList = COM_stringInArray("*",$vertList,true,false,".vtx.*","");
+	 
+
+	 
+	 //-------------------//
+	 // Parse weight file //
+	 //-------------------//
+	while (!`feof $fileId`){
+			
+	$line = strip(fgetline ($fileId));
+	$tmp = COM_splitString($line, " ");
+			
+	// If EOF is reached, break out of the loop
+	if ($line == "EOF"){
+		break;
+	}
+			
+	switch ($tmp[0]){    
+				 
+		case "JNTS:":
+				 
+			// < Joint Information   >     // 
+			//                             //
+			//  JNTS: joint1 joint2 etc... //
+				 
+			if ($nNode >= 0) {
+				 
+							 // ( We're 'inside' a node ) //
+				// For each joint in local joint list 
+				clear $tmpJoints;
+				for ($i = 0; $i < (`size $tmp`-1); $i++){
+									
+					$tmpJoints[$i] = ($jointPrefix+$tmp[$i+1]);
+									
+					// If auto name space is on, verify the proper joint name
+					if ($jointNameSpace == 1){
+						string $temp[];
+											 
+						$temp = `ls -fl -r 1 $tmpJoints[$i]`;
+											 
+						if (size($temp) > 1)
+							error ("More than one joint is named: "+$tmpJoints[$i]+".\n");
+											 
+						$tmpJoints[$i] = $temp[0];
+					}
+									
+					// Look for joint name in global list
+					int $found = false;
+					for ($j = 0; $j < `size $joints`; $j++){
+						if ($tmpJoints[$i] == $joints[$j]){
+							$found = true;
+							break;
+						}
+					}
+					
+					// Add index mapping to list
+					if ($found){
+						$jointOrder[$nNode] = (($jointOrder[$nNode])+$j+" ");
+									
+					} else {
+						error("Phantom joint "+$tmp[$i]+" found in "+$nodeList[$nNode]+". Terminating Import.");
+					}
+				}
+							 
+			} else {
+						
+				// < We're at the start of the file > //
+							 
+				// Add prefix and store global joint names
+				for ($i = 1; $i < `size $tmp`; $i++) {
+					$joints[$i - 1] = ($jointPrefix+$tmp[$i]);
+							
+					// If auto name space is on, verify the proper joint name
+					if ($jointNameSpace == 1){
+						string $temp[];
+										
+						$temp = `ls -fl -r 1 $joints[$i - 1]`;
+										 
+						if (size($temp) > 1) error ("More than one joint is named: "+$joints[$i - 1]+".\n");
+										 
+						$joints[$i - 1] = $temp[0];
+					} 
+				}
+			}
+						
+			break;
+							 
+		case "NODE:":
+
+					// < Node Information   > // 
+					//                        //
+					//  Node: name            //
+			
+					// Get the geometry name
+					$name = $tmp[1]; 
+					// Add the name to the list
+					$nodeList[++$nNode] = ("SKN_"+$name);
+													 
+					break;
+							 
+		case "VRTS:":  
+
+						// < Vert Count Information >             //
+						//                                        //
+						//  VRTS: # Verts Selected / Total Verts  //
+
+						// Increase the size of the selection array
+						$selSize = (int)$tmp[1];
+						$stretch = $selSize + (`size $storedVerts`);
+						// Store the number of selected verts for this node
+						$shiftSize[$nNode] = $selSize;
+						
+						// Increase the size of the position and weight arrays
+						$nodeSize[($nNode+1)] = $nodeSize[$nNode] + (int)$tmp[3];
+						$nCount = `size $vaVertPos`;
+						//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+						$stretch = $nodeSize[($nNode+1)]; // + $nCount;
+						//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+						$vaVertPos[($stretch-1)] = <<0,0,0>>;
+						$weightList[($stretch-1)] = ""; 
+						
+						break;
+						 
+			
+			case "vert:":
+			
+			//          < Vertex Information >           // 
+			//                                           //
+			//  index: position normal weights neighbors //
+			//  $lineData[0] = crap
+			//  $lineData[1] = vertId
+			//  $lineData[2] = vertPos
+			//  $lineData[3] = vertNormal
+			//  $lineData[4] = vertWeights
+			//  $lineData[5] = vertNeighbors
+			
+			string $lineData[]        = COM_splitString($line," ");
+			
+			// Get index
+			int $vertIndex	           = $lineData[1];
+			
+			// Store vertex for distance searching
+			$storedVerts[$nVerts]      = $vertIndex;
+			
+			// Get Vert Position
+			float  $tmpFloat[]         = COM_splitFloat($lineData[2],",");
+			vector $tmpVector          = $tmpFloat;
+			$vaVertPos[$vertIndex]     = $tmpVector;
+			
+			// Get the Vert Normal
+			float  $tmpFloat[]         = COM_splitFloat($lineData[3],",");
+			vector $tmpVector          = $tmpFloat;
+			$vaVertNormal[$vertIndex]  = $tmpVector;
+			
+			// Store the weights
+			float  $tmpFloat[]         = COM_splitFloat($lineData[4],",");
+			string $tmpString          = COM_joinFloat($tmpFloat," ");
+			$weightList[$vertIndex]    = $tmpString;
+			
+			// Store vertex's neighbors
+			//string $tmpArray[];
+			//tokenize $lineData[5] "[]" $tmpArray;
+			//float  $tmpFloat[]         = COM_splitFloat($tmpArray[0],",");
+			float  $tmpFloat[]         = COM_splitFloat($lineData[5],",");
+			string $tmpString          = COM_joinFloat($tmpFloat," ");
+			
+			$adjVerts[$nVerts++]       = $tmpString;
+								
+
+						
+			break;   
+				
+		case "***":
+			error("Weight File Canceled During Export Process (!) Terminating Import.");
+			break;
+			
+		default:
+			break;
+			
+		}
+	}
+	
+					
+	 
+	 
+	 //######################
+	 // /*
+	 //######################
+
+
+	 fclose $fileId;
+ 
+	 // Check for data import error
+	 if (`size $vaVertPos` == 0 && $mode == 0)
+			error("Import Error.  [Empty Weight File?]");
+			
+	 // Show the user some useful info
+	 print("\n -Data Parsing Finished.\n");
+	 
+	 //--------------------------------------------------------------//
+
+	 ///////////////////////////////////////////////////////////////
+	 /*                Print out imported info                    */
+	 ///////////////////////////////////////////////////////////////
+
+	 //----------------         	
+		/*
+	 //----------------   
+	 
+	 for ($j=0; $j < $nNode+1; $j++){	
+		print ("\nNODE: "+$nodeList[$j]+"\n");
+		print ("VRTS: "+$shiftSize[$j]+"\n");
+		print ("JNTS: "+$jointOrder[$j]+"\n");
+		int $low = $hi = 0;
+	for ($k=0; $k<$j; $k++){
+			$low = $low + $shiftSize[$k];
+				}
+				$hi = $low + $shiftSize[$j];
+				int $i;
+				for ($i=$low; $i<$hi; $i++) {	
+					print ("  "+($storedVerts[$i])+ ": << "); //($i-$scale)
+					print $vaVertPos[($storedVerts[$i])];
+					print (" >> ");
+					print $weightList[($storedVerts[$i])];
+					print (" [ ");
+					print $adjVerts[$i];
+					print (" ]\n");
+				}
+				print ("\n");
+	 }
+
+	 print("nVerts: "+$nVerts+"\n");
+
+	 //----------------  
+		*/
+	 //----------------
+	
+	 //--------------------------------------------------------------//
+	 
+	 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	 //****************   
+	 // /*
+	 //****************
+	 
+	 //If we're importing by vertex distance...
+
+	 
+	 //----------------//
+	 // Progress Meter //
+	 //----------------//
+						
+	 // Grab the number of verts to process
+	 int $total = `size $vertList`;
+						
+	 // Set a count to track the progress
+	 int $amount = 0;
+								 
+	 // Create progress meter
+	 if ($progressBar != 0){
+		 progressWindow
+				-title "Skin Weight Import"
+				-progress $amount
+				-maxValue $total
+				-status "Importing: 0%"
+				-isInterruptable true;
+	}
+			
+	 //-----------------------------//
+	 //      Copy skin weights      //
+	 //-----------------------------//
+			
+	 // Get geometry name corresponding to the start of the vertList
+	 string $geoName =  `substitute ".vtx.*" $vertList[0] ""`;
+	 
+	 print(" -Beginning re-weighting process...\n");
+	 
+	 // Process (assign weights to) each vertex in the vertex list
+	 for ($i = 0; $i < `size $vertList`; $i++){
+				 
+			// Assume we're going to weight this vertex
+			$vertSkip = false;
+			
+			// Get name and parent geometry of the vertex we wish to weight
+			string $vert = $vertList[$i];
+			string $vertGeo =  `substitute ".vtx.*" $vert ""`;
+			
+			// Get index of the vertex we wish to weight
+			string $vertNum = `match "\\[.*\\]" $vertList[$i]`;
+			$vertNum = `match "[0-9]+" $vertNum`;
+			
+			// If we've hit a new geometry, update information
+			if ($vertGeo != $geoName || $i == 0) 
+			{          
+				 // Change the name
+				 $geoName = $vertGeo;
+				 
+				 $lastGeo = "";
+
+				 // Find a skinCluster to copy weights to...
+				 clear $shape $history $skinCluster;
+				 if (`objExists $geoName`) {
+						$shape = `ls -dagObjects -hd 1 -type mesh $geoName`;	 
+						$history = `listHistory $shape[0]`;
+						$skinCluster = `ls -type skinCluster $history`;
+	 } 
+	 else error(("Problem skinning vertex "+$vert+". Geometry "+$geoName+" does not exist (!)"));
+						
+				 // Initialize search window indices
+				 $low = 0;
+				 $hi  = $nVerts;
+					
+				 // Look for geometry in imported list
+				 $name = "SKN_"+$geoName;
+				 int $found = false;
+				 for ($nNode = 0; $nNode < `size $nodeList`; $nNode++) {
+						if ($nodeList[$nNode] == ("SKN_"+$geoName))
+						{
+							 $found = true;
+							 // Eric Vignola - If geometry mapping is turned off, $found is always false
+							 if ($geoGroup == 0) $found = false;
+							 
+							 break;
+						}
+				 }
+				 // If a match was found, shift to 'local' geometry
+				 if ($found == true)
+				 {
+						for ($k=0; $k<$nNode; $k++)
+						{
+							 $low = $low + $shiftSize[$k];
+						}
+						$hi = $low + $shiftSize[$nNode];
+				 }
+				 else $name = "SKN_global";
+				 
+			}
+				 
+			//------------------------------//
+			//  < If applying by distance > //
+			//------------------------------//
+				 
+			if ($mode == 0){
+
+				 // Get vertex position
+				 $vPos = COM_xform({$vert},"-q -ws -t",{});
+					
+				 // Get Vertex Normal
+				 float $tmpFloat[]        = `polyNormalPerVertex -q -xyz $vert`;
+				 vector $tmpVectorArray[] = COM_floatToVectorArray($tmpFloat);
+				 vector $vNormal = MATH_vectorAverage($tmpVectorArray);
+				 
+
+				 
+				 
+				 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+				 // ???   Collect vertex normal info?    ??? //
+				 // ??? [Switch back to a distance list] ??? //
+				 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+				 
+				 // Find closest vertex
+				 $closestDist     = 99999999999999.0;
+				 $closestDistNorm = 99999999999999.0;
+				 $vertIndex       = -1;
+				 $vertIndexNormal = -1;
+				 int $normalFound = 0;
+				 
+				 float $test;
+				 float $dist;
+				 
+					for ($j = $low; $j < $hi; $j++) {
+						
+						$dist = mag($vPos[0] - $vaVertPos[($storedVerts[$j])]);
+
+						
+						if ($dist < $closestDist) {
+							$closestDist = $dist;
+							$vertIndex = $j;
+						}
+						
+						if ($normalFilter == 1){
+							
+							float $dot = clamp(-1.0, 1.0, dot(unit($vaVertNormal[$storedVerts[$j]]),unit($vNormal)));  //clamped to fix precision error
+							$test = acosd($dot);
+							
+							if ($dist < $closestDistNorm){
+								
+								if ($distanceTreshold == 0){
+									if ($normalTreshold == 180){
+										$closestDistNorm = $dist;
+										$vertIndexNormal = $j;
+										$normalFound     = 1;
+	
+									}else if ($test <= $normalTreshold ){
+										$closestDistNorm = $dist;
+										$vertIndexNormal = $j;
+										$normalFound     = 1;
+									}
+									
+								}else if ($dist <= $distanceTreshold ){
+	
+									if ($normalTreshold == 180 && $normalFilter == 1){
+										$closestDistNorm = $dist;
+										$vertIndexNormal = $j;
+										$normalFound     = 1;
+	
+									}else if ($test <= $normalTreshold){
+	
+										$closestDistNorm = $dist;
+										$vertIndexNormal = $j;
+										$normalFound     = 1;
+									}
+								}
+							}
+						}
+				 }
+				 
+				 // If normal filter is on, see if we have a good candidate,
+				 // otherwise default on the closest one.
+				if ($normalFilter == 1 && $normalFound == 1){					
+					$vertIndex = $vertIndexNormal;
+				}
+
+				 
+				 // Find the neighboring vertices of this closest vertex
+				 clear $baryVerts;
+				 $baryVerts = COM_splitFloat($adjVerts[$vertIndex], " ");
+
+						
+				 // Find the distance to the neighboring verts
+				 $index = 0;
+				 clear $baryDist;
+				 for ($j in $baryVerts) {
+						float $dist = mag($vPos[0] - $vaVertPos[$j]);
+						$baryDist[$index++] =  ($dist + "#" + ($j));
+				 }
+
+				 // Sort the neighboring verts by distance
+				 $baryDist = COM_hashQuickSort($baryDist);
+
+
+				 // Find the closest neighbors' indices
+				 clear $tmp;
+				 clear $baryVerts;
+				 for ($j = 0; $j < `size $baryDist`; $j++) {
+						tokenize $baryDist[$j] "#" $tmp;
+						$baryVerts[$j] = $tmp[1];
+				 }
+
+				 // Container for weight scalars
+				 vector $baryWeights = <<0,0,0>>;
+				 
+				 // If we have enough neighbors to use baryCentric, go for it.
+				 if (`size $baryVerts` > 1) {
+				 
+					// Collect the indices of the points to use for baryCentric Weighting
+					int $one   = $storedVerts[$vertIndex];
+					int $two   = $baryVerts[0];
+					int $three = $baryVerts[1];
+						
+					// Collect the positions of the baryCentric points
+					vector $vOne = $vaVertPos[$one];
+					vector $vTwo = $vaVertPos[$two];
+					vector $vThree = $vaVertPos[$three];
+
+					// Get the weights for the 3 baryCentric points
+					clear $tmpWeights1 $tmpWeights2 $tmpWeights3;
+					$tmpWeights1 = COM_splitFloat($weightList[$one]," ");
+					$tmpWeights2 = COM_splitFloat($weightList[$two]," ");
+					$tmpWeights3 = COM_splitFloat($weightList[$three]," ");
+
+					// Find the closest point on the baryCentric triangle
+					$vPoint = MATH_closestPointOnTriangle($vOne, $vTwo, $vThree, $vPos[0]);
+				 
+					// Get the baryCentric weighting from the baryPoints and projected point
+					$baryWeights = MATH_barycentricCoord($vOne, $vTwo, $vThree, $vPoint);
+				 
+				 }
+				 
+				 clear $adjWeights;
+				 // Check for weight calculation singularities
+				 if (mag($baryWeights) == 0 ) {
+						
+						// If there are no neighbors
+						if (`size $baryVerts` == 0) {
+							 
+							 // Gotta use the weights of the closest vertex alone
+							 int $one   = $storedVerts[$vertIndex];
+							 $adjWeights = COM_splitFloat($weightList[$one]," ");
+						
+						} else {
+						
+							 // If there was only one neighbor
+							 if (`size $baryVerts` == 1) {
+								 
+									// Use closet two points instead
+									int $one   = $storedVerts[$vertIndex];
+									int $two   = $baryVerts[0];
+										
+									vector $vOne = $vaVertPos[$one];
+									vector $vTwo = $vaVertPos[$two];
+							
+									// Get the weights for the 2 spline points
+									clear $tmpWeights1 $tmpWeights2;
+									$tmpWeights1 = COM_splitFloat($weightList[$one]," ");
+									$tmpWeights2 = COM_splitFloat($weightList[$two]," ");
+									
+									// Find the closest point on the baryCentric triangle
+									$vPoint = MATH_closestPointOnLine($vOne, $vTwo, $vPos[0]);
+							 }
+							 
+							 // Use a spline based weighting adjustment
+							 $baryWeights = SKN_splineWeights($vOne, $vTwo, $vPoint);
+							 
+							 // Adjust the weights by the two spline values
+							 $tmpWeights1 = MATH_floatMultiply($tmpWeights1, $baryWeights.x);
+							 $tmpWeights2 = MATH_floatMultiply($tmpWeights2, $baryWeights.y);
+							 
+								// Sum the weights for each joint to get total adjustment
+							for ($j = 0; $j < `size $tmpWeights1`; $j++) {
+							
+								 $adjWeights[$j] = $tmpWeights1[$j] + $tmpWeights2[$j];
+								 
+							}
+						
+						}
+												
+				 } else {
+						
+						//Apply baryCentric weighting to weights           
+						$tmpWeights1 = MATH_floatMultiply($tmpWeights1, $baryWeights.x);
+						$tmpWeights2 = MATH_floatMultiply($tmpWeights2, $baryWeights.y);
+						$tmpWeights3 = MATH_floatMultiply($tmpWeights3, $baryWeights.z);
+						
+						// Sum the weights for each joint to get total adjustment
+						for ($j = 0; $j < `size $tmpWeights1`; $j++) {
+							 
+							 $adjWeights[$j] = $tmpWeights1[$j] + $tmpWeights2[$j] + $tmpWeights3[$j];
+						}
+						
+				 }
+				 
+			} else {
+			
+				 //------------------------------//
+				 //    < Applying by Index >     //
+				 //------------------------------//
+				 
+				 $name = "SKN_"+$geoName;
+				 int $found = false;
+				 for ($nNode = 0; $nNode < `size $nodeList`; $nNode++) {
+					if ($nodeList[$nNode] == ("SKN_"+$geoName))
+					{
+						 $found = true;
+						 break;
+					}
+				 }
+				 
+				 // Get the global index of the vertex we want to weight 
+				 $vertIndex = $nodeSize[$nNode] + (int)$vertNum;
+				 
+				 // If the geometry is in the scene and the weights for this vert were exported
+				 if ($name != "SKN_global" && $weightList[$vertIndex] != "") {
+						
+						//print ($index+"\n");
+						// Grab the weights
+						clear $adjWeights;
+						$adjWeights = COM_splitFloat($weightList[$vertIndex]," ");
+
+				 } else $vertSkip = true;
+			
+			}
+
+					
+			//----------------------------------//
+			//  Do Joint Re-Order Calculations  //
+			//----------------------------------//
+
+			clear $ordWeights;
+			// If we have weights for this vertex
+			if ($vertSkip == false) {
+				 
+				 // If no cluster exists
+				 if ($skinCluster[0] == "") {
+			
+						// < Geometry is unbound > //
+						
+						// Find the index of closest vertex's parent geometry
+						$nCount = 0;
+						for($nNode = 0; $nNode < `size $nodeList`; $nNode++) {
+							 // Find node index
+							 $nCount += $shiftSize[$nNode];
+							 if ($nCount > $vertIndex)
+									break;
+						}
+						 
+						// Store name of geometry to use as a check in the future
+						$lastGeo = $nodeList[$nNode];
+				 
+						// Get the joint order of closest vertex
+						clear $vtxJoints;
+						$vtxJoints = COM_splitFloat($jointOrder[$nNode]," ");
+			 
+						// Create a joint-name list from joint order
+						clear $jointMap $skinJoints;
+						for ($j = 0; $j < `size $vtxJoints`; $j++) {
+							 // Add joint name
+							 int $index = $vtxJoints[$j];
+							 $skinJoints[$j] = $joints[$index];
+							 // Add index to weight re-ordering map (1-1 since we skin to this order)
+							 $jointMap[$j] = $j;
+						}
+			 
+						// Weight value order stays the same
+						$ordWeights = $adjWeights; 	     
+			
+						// Create a skin cluster based on new joint list
+						$skinCluster = `skinCluster -tsb $skinJoints $geoName`;
+							 
+				 } else {
+					 
+						// < Geometry already bound > //
+
+						 
+						// Find the index of closest vertex's parent geometry
+						$nCount = 0;
+						for($j = 0; $j < `size $nodeList`; $j++) {
+							 // Find node index
+							 $nNode = $j;
+							 $nCount += $shiftSize[$nNode];
+							 if ($nCount > $vertIndex) {
+									break;
+							 }
+						}
+						 
+						// If geo name is same as previous vertex's parent geo
+						if ($nodeList[$nNode] == $lastGeo) {
+						 
+							 // Set the predicted size of the weight list
+							 $ordWeights[(`size $skinJoints`-1)] = 0;
+						
+							 // Use stored map to re-order joints
+							 for ($j=0; $j<`size $jointMap`; $j++) {
+									
+									$ordWeights[($jointMap[$j])] = $adjWeights[$j];
+							 }
+									 
+						} else {
+						 
+							 // < Create a mapping from source geo joints to target geo joints > //
+	 
+							 // Reset the stored geometry name
+							 $lastGeo = $nodeList[$nNode];
+												 
+							 // Get target geo's joints
+							 clear $skinJoints;
+							 $skinJoints = `listConnections ($skinCluster[0] + ".matrix")`;
+									
+							 // Get source geo's joint order from the closest vertex
+							 clear $vtxJoints;
+							 $vtxJoints = COM_splitFloat($jointOrder[$nNode]," ");
+							 
+							 // Set the predicted size of the weight list
+							 $ordWeights[(`size $skinJoints`-1)] = 0;
+							
+							 clear $jointMap;
+									
+							 // For each joint in source geometry's list
+							 for ($j=0;  $j < `size $vtxJoints`; $j++) {
+
+									// Grab the name of the source joint
+									int $index = $vtxJoints[$j];
+									$jointName = $joints[$index];  	   
+									 
+									// For each joint in target geometry's list
+									$found = false;
+									for($k=0; $k < `size $skinJoints`; $k++) {
+
+										 if ($jointName == $skinJoints[$k]) {
+												$found = true;
+												break;
+										 }
+									}
+									
+									if ($found) {
+								 
+										 // Add weight value to list
+										 $ordWeights[$k] = $adjWeights[$j];
+										 // Add index to map
+										 $jointMap[$j] = $k;
+										 
+									} else {
+								
+										 // Add joint to skin cluster
+										 skinCluster -edit -dr 1 -lw true -wt 0 -addInfluence $jointName $skinCluster[0];
+										 // Add index to map
+										 $jointMap[$j] = `size $ordWeights`;
+										 // Add joint to list
+										 $skinJoints[`size $ordWeights`] = $jointName;
+										 // Add weight value to list	
+										 $ordWeights[`size $ordWeights`] = $adjWeights[$j];
+										
+									}
+							 }
+						}                   
+				 }
+
+				 
+				 // Set the vertex weights to the new values
+				 // Eric Vignola - Normalizing weights no matter what and weeding out values below 0.01
+				 for ($iii = 0; $iii < size($ordWeights); $iii++){
+					if ($ordWeights[$iii] < 0.01) $ordWeights[$iii] = 0;
+				 }
+				 $ordWeights = MATH_normalize($ordWeights);
+				 $line = COM_joinFloat($ordWeights, " ");
+					
+				 // Apply the new weight values (!)
+				 string $cmd = ("setAttr "+$skinCluster[0]+".weightList["+$vertNum+"].weights[0:"+(`size $ordWeights`-1)+"] "+ $line);
+				 eval $cmd;
+			
+			}
+				
+			// Check if progress bar was cancelled
+			if ($progressBar != 0){
+				if(`progressWindow -query -isCancelled`) {
+					
+					 // Close the progress bar and report cancelation.
+					 progressWindow -endProgress;
+					 error("Skin Import Canceled by user.");
+										
+				} else {
+						
+					 // Up the amount
+					 $amount += 1;
+					 // Set the progress
+					 progressWindow -edit 
+							-progress $amount 
+							-status ("Importing: "+((int)(100*(float)$amount/$total))+"%");
+				}
+		}
+			
+	 }  // End of Vertex For Loop
+			
+	
+	
+	 // Using Maya's normalize weights to work around MEL's lack of precision.
+	 for ($i = 0; $i < size($geoList); $i++){
+		$shape = `ls -dagObjects -hd 1 -type mesh $geoList[$i]`;	 
+		$history = `listHistory $shape[0]`;
+		$skinCluster = `ls -type skinCluster $history`;
+	 	
+	 	skinPercent -normalize true $skinCluster[0] $geoList[$i];
+	 }
+	 
+
+	 
+							 
+	 // Stop the progress bar
+	 if ($progressBar != 0)
+			progressWindow -endProgress;
+	 
+	 //****************
+	 // */
+	 //****************
+	 
+	 // We're done, rejoice.
+	 print ("\n>> Weight Importing COMPLETE (!) [");
+	 print(`timerX -st $start`); 
+	 print(" sec]\n\n");
+	 
+	 return 0;
+
+}
+                                         

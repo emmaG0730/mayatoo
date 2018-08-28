@@ -1,0 +1,72 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_closestPointOnLine.mel
+
+>>Author
+
+        Eric Vignola -- 07-24-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Returns the closest perpendicular point on a given line
+
+>>Description
+
+        Given a point in space and two points making a line, this routine will 
+        return the closest world coord on that line.
+
+>>Arguments
+
+        vector $a: First point of vector.
+        
+        vector $b: Second point of vector.
+        
+        vector $p: Point in space to calculate.
+
+>>Return
+
+        vector -  closest point on vector
+
+>>Syntax
+
+        
+
+>>Examples
+
+        None.
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+global proc vector MATH_closestPointOnLine(vector $a, vector $b, vector $p)
+{	
+	// Check to see if the point is on $a or $b
+	if ($p == $a || $p == $b) return $p;
+	
+	// Check to see if we're on the vector
+	vector $ab = $b - $a;
+	
+	// Exit if vector length is 0
+	float $lenght_ab = mag($ab);
+	if ($lenght_ab == 0) return $p;
+	
+	// Test to see if we're within the borders
+	vector $ap = $p - $a;
+	vector $return = (dot($ap,unit($ab))*unit($ab))+$a;
+	
+	return $return;
+
+}

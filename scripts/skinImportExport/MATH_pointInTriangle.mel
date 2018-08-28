@@ -1,0 +1,91 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_pointInTriangle.mel
+
+>>Author
+
+        Eric Vignola -- 05-14-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Returns true if given point is in a triangle.
+
+>>Description
+
+        This procedure takes in 3 vectors defining a triangle and a point, 
+        then checks to see if we're in the triangle.
+
+>>Arguments
+
+        vector $a: First point of triangle
+        
+        vector $b: Second point of triangle
+        
+        vector $c: Third point of triangle
+        
+        vector $p: Point in space to check
+
+>>Return
+
+        int: 0 = not in triangle; 1 = in triangle.
+
+>>Syntax
+
+        
+
+>>Examples
+
+        MATH_pointInTriangle(<<0,0,0>>,<<5,0,0>>,<<2.5,5,0>>,<<2,2,0>>);
+        
+        Result: 1
+        
+        = = = = = = = =
+        
+        MATH_pointInTriangle(<<0,0,0>>,<<5,0,0>>,<<2.5,5,0>>,<<2,2,1>>);
+        
+        Result: 0
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+
+global proc int MATH_pointInTriangle(vector $a, vector $b, vector $c, vector $p)
+{
+	// Init vectors
+	vector $pa = $a - $p;
+	vector $pb = $b - $p;
+	vector $pc = $c - $p;
+	
+	
+	// Check to see if we're on a point
+	if ($pa == <<0,0,0>> || $pb == <<0,0,0>> || $pc == <<0,0,0>>) return 1;
+	
+	float $dotAPB = clamp(-1,1,dot(unit($pa),unit($pb)));
+	float $dotBPC = clamp(-1,1,dot(unit($pb),unit($pc)));
+	float $dotCPA = clamp(-1,1,dot(unit($pc),unit($pa)));
+	
+	// Check to see if we're in the triangle
+	float $apb = acosd($dotAPB);
+	float $bpc = acosd($dotBPC);
+	float $cpa = acosd($dotCPA);
+	
+	float $total = $apb + $bpc + $cpa;
+
+	if ($total > 359.9999 && $total < 360.0001) return 1;
+	
+	return 0;
+
+}

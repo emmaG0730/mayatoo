@@ -1,0 +1,73 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        COM_floatToVectorArray.mel
+
+>>Author
+
+        Eric Vignola -- 09-13-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Turns a float array into a vector array.
+
+>>Description
+
+        Given a list of floats divisible by 3 (3,9,12....) this routine will return
+        a vector array.
+
+>>Arguments
+
+        float $f[]: An array of floats.
+
+>>Return
+
+        vector $v: An Array vectors.
+
+>>Syntax
+
+        
+
+>>Examples
+
+        None.
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+global proc vector[] COM_floatToVectorArray(float $f[])
+{
+	vector $v[];
+	
+	int $size = size($f);
+	if ($size == 0)
+		error("COM_floatToVectorArray: No values given to convert.\n");
+
+	// test to see if we're getting triples
+	float $test = $size % 3;
+	if ($test != 0)
+		error("COM_floatToVectorArray: Number of values isn't divisible by 3.\n");
+	
+	// passed all tests, go for it
+	int $j = 0;
+	for ($i = 0; $i < $size; $i+=3){
+		$v[$j] = <<$f[$i],$f[$i+1],$f[$i+2]>>;
+		$j++;
+	}
+
+
+	return $v;
+}
+
+

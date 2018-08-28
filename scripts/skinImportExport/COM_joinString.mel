@@ -1,0 +1,66 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+	COM_joinString.mel
+
+>>Author
+
+	Eric Vignola eric_vignola@yahoo.com
+
+>>Synopsis
+
+	Join a list of strings into a single string.
+
+>>Description
+
+	Given a list of strings and a delimiter, returns a single string 
+	consisting of the joined strings separated by the delimiter.
+
+>>Arguments
+
+	string $list[]: An array of strings.
+	
+	string $space:  The delimiter for the returned string.
+
+>>Return
+
+	string $tmp
+
+>>Syntax
+
+	
+
+>>Examples
+
+	
+
+>>Dependencies
+
+	None.
+
+>>Updates
+
+	
+
+<!--endDoc-->
+
+*/
+
+global proc string COM_joinString(string $list[], string $space)
+{
+	string $tmp;
+	int $j = `size($list)`;
+	$j -= 1;
+	
+	for ($i = $j ; $i >= 0 ; $i --)
+	{
+		if ($i == $j)
+		{
+			$tmp = $list[$i];
+		} else {
+			$tmp = ($list[$i] + $space + $tmp);
+		}
+	}
+	return $tmp;
+}

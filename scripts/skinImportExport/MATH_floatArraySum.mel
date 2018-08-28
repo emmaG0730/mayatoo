@@ -1,0 +1,60 @@
+// (c) 2003-2005 Electronic Arts Inc.
+
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_floatArraySum.mel
+        
+>>Author
+
+        mike lang -- 07-28-05 -- mike@mike-lang.com
+        
+>>Synopsis
+
+        Adds each element in a float array together.
+
+>>Description
+
+        This procedure takes in a float array.  It then moves through 
+        the float array adding each element together and returns the sum.
+
+>>Arguments
+
+        float $vals[]: The array of values to be added.
+
+>>Return
+
+        float[]: array of scaled float values
+
+>>Syntax
+
+        
+
+>>Examples
+
+        MATH_floatArraySum({0.2,0.6});
+        
+        Result: 1
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+global proc float MATH_floatArraySum(float $vals[])
+{
+	float $sum;
+	for ($i = 0; $i < size($vals); $i++){
+		$sum = $sum + $vals[$i];
+	}
+
+	return $sum;
+}

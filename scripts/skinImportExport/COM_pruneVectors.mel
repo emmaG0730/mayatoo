@@ -1,0 +1,71 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        COM_pruneVectors.mel
+
+>>Author
+
+        Eric Vignola -- 01-25-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Turns vectors XYZ elements to zero if absolute is below a given treshold.
+
+>>Description
+
+        Given a list of vectors, this routine look at the absolute of every XYZ component,
+        and reduce to zero any value under the given treshold.
+
+>>Arguments
+
+        vector $vectors[]: An array of vectors.
+        float  $min      : The minimal treshold.
+
+>>Return
+
+        vector[]: The pruned vectors.
+
+>>Syntax
+
+        
+
+>>Examples
+
+        None.
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+global proc vector[] COM_pruneVectors(vector $vectors[], float $min)
+{
+	vector $return[];
+	float $tV[];
+
+	
+	for ($i = 0; $i < size($vectors); $i++){
+		$tV = $vectors[$i];
+	
+		if (abs($tV[0]) < $min) $tV[0] = 0;
+		if (abs($tV[1]) < $min) $tV[1] = 0;
+		if (abs($tV[2]) < $min) $tV[2] = 0;
+
+		$return[$i] = <<$tV[0], $tV[1], $tV[2]>>;
+	}
+
+
+	return $return;
+
+}
+

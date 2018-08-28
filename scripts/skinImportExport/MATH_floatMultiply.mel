@@ -1,0 +1,67 @@
+// (c) 2003-2005 Electronic Arts Inc.
+
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_floatArrayMultiply.mel
+        
+>>Author
+
+        mike lang -- 07-28-05 -- mike@mike-lang.com
+        
+>>Synopsis
+
+        Multiply each element in a float array by a scalar value.
+
+>>Description
+
+        This procedure takes in a float and a float array.  It then moves through 
+        the float array multiplying each element by the float value.  It is essentially
+        multiplying the array by a scalar value.
+
+>>Arguments
+
+        float $vals[]: The array of values to be scaled.
+        float $scale:  The scalar to adjust the values of the array
+
+>>Return
+
+        float[]: array of scaled float values
+
+>>Syntax
+
+        
+
+>>Examples
+
+        MATH_floatArrayMultiply(0.5,{0.2,4.6,9.0});
+        
+        Result: 0.1 2.3 4.5
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+
+global proc float[] MATH_floatMultiply(float $vals[], float $scale)
+{
+   float $return[];
+   
+   for ($d = 0; $d < `size $vals`; $d++){
+      $return[$d] = $scale*($vals[$d]);
+   }
+   
+   return $return;
+}
+
+

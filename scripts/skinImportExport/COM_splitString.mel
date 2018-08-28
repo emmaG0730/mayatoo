@@ -1,0 +1,70 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+	COM_splitString.mel
+
+>>Author
+
+	Eric Vignola eric_vignola@yahoo.com
+
+>>Synopsis
+
+	Split a string into an array of strings.
+
+>>Description
+
+	Given a string of strings separated by a delimiter, split on the delimiter
+	and create an array of the resulting strings.
+
+>>Arguments
+
+	string $string: A strings of strings joined by a delimiter.
+	
+	string $split:  The delimiter used to split $string.
+
+>>Return
+
+	string $return[]
+
+>>Syntax
+
+	
+
+>>Examples
+
+	
+
+>>Dependencies
+
+	None.
+
+>>Updates
+
+	
+
+<!--endDoc-->
+
+*/
+
+global proc string[] COM_splitString(string $string, string $split)
+{
+	string $array[], $return[];
+	$string = strip($string);
+	$string = `substitute "\t" $string " "`;
+	
+	
+	string $match = `match "  +" $string`;
+	$string = `substitute $match $string " "`;
+	
+	tokenize $string $split $array;
+	
+
+	for ($i = 0; $i < size($array); $i++){
+		string $strip = strip($array[$i]);
+		
+		if ($strip != "") $return[size($return)] = $strip;
+	}
+	
+	return $return;
+}

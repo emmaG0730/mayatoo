@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>430</width>
+    <height>337</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>SVN</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>subversion.png</normaloff>subversion.png</iconset>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QHeaderView::section 
+{
+ 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fff, stop:1 #333);
+	color: #333;
+	height: 1.54em;
+}
+
+QMainWindow#MainWindow * 
+{
+	color: rgb(187,187,187);
+    background: rgb(68,68,68);
+}
+
+QMainWindow#MainWindow
+{
+    color: rgb(187,187,187);
+	background: rgb(68,68,68);
+	/*border: 0;*/
+}
+
+QMenuBar 
+{
+	color: rgb(187,187,187);
+}
+QMenuBar::item 
+{
+ 	background: transparent;
+ 	color: rgb(187,187,187);
+ 	/*border: 0;*/
+}
+
+QMenuBar::item:selected 
+{
+	background: rgb(82,133,166);
+
+}
+QMenu::item:selected 
+{
+	background: rgb(82,133,166);
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="font">
+    <font>
+     <family>Microsoft Sans Serif</family>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QWidget
+{
+	color:  rgb(187, 187, 187);
+	background-color: rgb(68, 68, 68);
+}
+
+QLineEdit
+{
+	border: none;
+	border-width: 2px;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(43, 43, 43);
+	padding: 2px;	
+}
+
+QPlainTextEdit
+{
+	border: none;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(43, 43, 43);	
+}
+
+QPushButton
+{
+	border-style: outset;
+	color:  rgb(187, 187, 187);
+	background-color: rgb(93, 93, 93);
+	padding: 5px;
+}
+
+QPushButton:hover
+{
+   background-color: rgb(112, 112, 112);
+}</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0">
+      <property name="spacing">
+       <number>5</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetFixedSize</enum>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QFormLayout" name="formLayout_4">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="l_file">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>File:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="s_file">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="formLayout_6">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="l_info">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Information:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="s_info">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="l_comment">
+        <property name="font">
+         <font>
+          <family>Microsoft Sans Serif</family>
+         </font>
+        </property>
+        <property name="text">
+         <string>Comment (Please use English as much as possible)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="s_comment">
+        <property name="font">
+         <font>
+          <family>Microsoft Sans Serif</family>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="layout_buttons" rowstretch="0">
+        <item row="0" column="0">
+         <widget class="QPushButton" name="btn_submit">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="text">
+           <string>Submit</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="btn_cancel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="text">
+           <string>Cancel</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="btn_revert">
+          <property name="font">
+           <font>
+            <family>Microsoft Sans Serif</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>Revert</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="0">
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="l_client">
+        <property name="font">
+         <font>
+          <family>Microsoft Sans Serif</family>
+         </font>
+        </property>
+        <property name="text">
+         <string>Workspace (P4CLIENT):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="s_pClient">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+   <zorder>layoutWidget</zorder>
+   <zorder>formLayoutWidget</zorder>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>430</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
+   </property>
+   <widget class="QMenu" name="menuLanguage">
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="title">
+     <string>Language</string>
+    </property>
+    <addaction name="actionChinese"/>
+    <addaction name="actionEnglish"/>
+   </widget>
+   <widget class="QMenu" name="menuExtraOptions">
+    <property name="title">
+     <string>Extra Options</string>
+    </property>
+    <addaction name="actionDeleteSVN"/>
+    <addaction name="actionSVNLogin"/>
+   </widget>
+   <addaction name="menuLanguage"/>
+   <addaction name="menuExtraOptions"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+  </widget>
+  <action name="actionChinese">
+   <property name="text">
+    <string>中文</string>
+   </property>
+  </action>
+  <action name="actionEnglish">
+   <property name="text">
+    <string>English</string>
+   </property>
+  </action>
+  <action name="actionDeleteSVN">
+   <property name="text">
+    <string>Delete From SVN</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft Sans Serif</family>
+    </font>
+   </property>
+  </action>
+  <action name="actionSVNLogin">
+   <property name="text">
+    <string>SVN Login</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

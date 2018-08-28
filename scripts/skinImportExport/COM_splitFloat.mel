@@ -1,0 +1,70 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+	COM_splitFloat.mel
+
+>>Author
+
+	Eric Vignola eric_vignola@yahoo.com
+
+>>Synopsis
+
+	Split a string into an array of floating numbers
+
+>>Description
+
+	Given a string of floating numbers separated by a delimiter, split the string 
+	on the delimiter and create an array of the numbers.
+
+>>Arguments
+
+	string $string: A string of floating numbers separated by a delimiter.
+	
+	string $split:  The delimiter used to split $string.
+
+>>Return
+
+	float $return[]
+
+>>Syntax
+
+	
+
+>>Examples
+
+	
+
+>>Dependencies
+
+	None.
+
+>>Updates
+
+	
+
+<!--endDoc-->
+
+*/
+
+global proc float[] COM_splitFloat(string $string, string $split)
+{
+	string $array[];
+	float $return[];
+	$string = strip($string);
+	$string = `substitute "\t" $string " "`;
+	
+	
+	string $match = `match "  +" $string`;
+	$string = `substitute $match $string " "`;
+	
+	tokenize $string $split $array;
+	
+	for ($i = 0; $i < size($array); $i++){
+		string $strip = strip($array[$i]);
+		
+		if ($strip != "") $return[size($return)] = $strip;
+	}
+	
+	return $return;
+}

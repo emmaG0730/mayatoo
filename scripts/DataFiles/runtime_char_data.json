@@ -1,0 +1,58 @@
+{
+    "XieYunLiu" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/XieYunLiu/CHAR_xieYunLiu_v1_RIG.ma",
+        "character_meshes" : ["a_M_xieYunLiu_v1_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/XieYunLiu/Rigs/a_M_xieYunLiuRender_v1_GEO.fbx"
+    },
+    "Soldier" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Soldier/Rigs/CHAR_MA_bladeSoldier_RIG.ma",
+        "character_meshes" : ["a_M_soldier_v1_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Soldier/Rigs/a_M_soldier_v1_GEO.fbx"
+    },
+	"Citizen_00" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/CHAR_MA_citizen00_RIG.ma",
+        "character_meshes" : ["Citizen_00_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/Citizen_00_GEO.fbx"
+    },
+	"Citizen_01" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/CHAR_MA_citizen_RIG.ma",
+        "character_meshes" : ["P001006_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/a_M_P001006_v1_GEO.fbx"
+    },
+	"Citizen_02" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/CHAR_MA_citizen_RIG.ma",
+        "character_meshes" : ["P001012_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/a_M_P001012_v1_GEO.fbx"
+    },
+	"Citizen_03" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/CHAR_MA_citizen_RIG.ma",
+        "character_meshes" : ["P001024_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/a_M_P001024_v1_GEO.fbx"
+    },
+	"Citizen_04" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/CHAR_MA_citizen_RIG.ma",
+        "character_meshes" : ["P001052_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/a_M_P001052_v1_GEO.fbx"
+    },
+	"Citizen_05" : {
+        "file" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/CHAR_MA_citizen_RIG.ma",
+        "character_meshes" : ["P001094_GEO"],
+        "root_joint" : "b_M_origin_v1_JNT",
+        "group" : "c_M_character_v1_GRP",
+        "export_path" : "R:/JX4_SourceData/Graphics/Characters/Human/MaleAdult/Citizens/Rigs/a_M_P001094_v1_GEO.fbx"
+    }
+}

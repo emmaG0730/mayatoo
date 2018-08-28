@@ -1,0 +1,107 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+        COM_stringInArray.mel
+
+>>Author
+
+        mike lang -- 08-18-05 -- mike@mike-lang.com
+
+>>Synopsis
+
+        Search for and filter elements of a string array
+
+>>Description
+
+        Searches for matches to a regular expression in a string array.  Allows for case sensitive searching and
+        can filter out multiple occurances of the same string in the array.  Also has an option to allow substition
+        on each element of the array before the search is made. 
+        Returns an array of all elements that match the criteria.
+
+>>Arguments
+
+	string $expr: A regular expression whose presence you wish to detect
+	
+        string $array[]: An array of strings to match against.
+        
+        int $case:  A bool to allow for case sensitive (true) / insensitive (false) filtering
+        
+        int $multiple:  A bool to allow (true) / disallow (false) multiple appearances of a matched string in the return array
+        
+        string $subexp:  A regular expression to use for substitution before search is conducted
+        
+        string $substr:  A string to replace with in the pre-search substitution
+
+>>Return
+
+        string[] : Result of the matching strings
+
+>>Syntax
+
+        
+
+>>Examples
+
+        string $test[] = {"This","test","is","just","a","test"};
+	
+	COM_stringInArray("t*", $test, true, true, "","");
+	// Result: test test //
+	
+	COM_stringInArray("t*", $test, false, true, "","");
+	// Result: This test test //
+	
+	COM_stringInArray("t*", $test, false, false, "","");
+	// Result: This test //
+	
+	COM_stringInArray("t*", $test, false, false, "just","totally rules");
+	// Result: This test totally rules //
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+global proc string[] COM_stringInArray(string $expr, string $array[], int $case, int $multiple, string $subexp, string $substr)
+{
+	if (size($array) == 0) return {};
+
+	string $return[], $trim, $elem, $regexp;
+	int $k = 0;
+	
+	for ($i = 0; $i < size($array); $i++){
+	
+		$trim = `substitute $subexp $array[$i] $substr`;
+		
+		if ($case == false) {
+			$elem = tolower($trim);
+			$regexp = tolower($expr);
+		} 
+		else {
+			$elem = $trim;
+			$regexp = $expr;
+		}
+		
+		if (`gmatch $elem $regexp`){
+			if ($multiple == true && $trim != "")
+				$return[$k++] = $trim;
+			else 
+			{
+				int $found = `size (COM_stringInArray($trim, $return, $case, true, "",""))`;
+				if($found == false && $trim != "")
+					$return[$k++] = $trim;
+			}
+			
+		}
+		
+	}
+
+	return $return;
+}
+

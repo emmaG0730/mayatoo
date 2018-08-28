@@ -1,0 +1,162 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+        COM_hashQuickSort.mel
+
+>>Author
+
+        Eric Vignola -- 12-30-04 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Return sorted hash from smallest to highest (<val>#what#ever#you#want)
+
+>>Description
+
+        Given a hash array (string array made of item#item) this routine will use the first hash 
+        item as a float value to be sorted using the quickSort algorythm. This is the fastest 
+        possible MEL routine to achieve efficient sorting of large arrays (10000+). Otherwise 
+        it'll be as fast as a bubbleSort routine.
+
+>>Arguments
+
+        string $vals[]: A given hash array.
+
+>>Return
+
+        string $vals[]: The sorted hash array.
+
+>>Syntax
+
+        
+
+>>Examples
+
+        string $hash[] = {"34.545#joint0","2.32343#joint1"};
+
+        $hash = COM_hashQuickSort($hash);
+
+        // returns: {"2.32343#joint1","34.545#joint0"}
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+
+proc q_sort(float $floats[], string $strings[], int $left, int $right)
+{
+
+	// Begin operations
+
+   int $down; 					/* move thru array bottom-up */
+   int $up;						/* move thru array top-down */
+   float $temp; 				/* needed for swapping */
+   string $sTemp;
+   int $mid;					/* midpoint of array */
+   float $pivot;				/* pivot value */
+   string $sPivot;
+   int $p_idx;					/* pivot index */
+
+   $down = $left;
+   $up = $right;
+   $mid = ($left + $right)/2;
+   $pivot = $floats[$mid];		/* pivot is midpoint */
+   $sPivot = $strings[$mid];
+
+   while ($down < $up)  		/* while more to examine */
+   {
+      while (($down < $up) && ($floats[$up] >= $pivot))	/* find a value < pivot in */
+         $up-- ;										/* higher half of the array */
+       
+      while (($down < $up) && ($floats[$down] <= $pivot))	/* find a value > pivot in */
+         $down++ ;										/* lower half of the array */
+
+      if ($down != $up)				/* if not done looking */
+      {
+         $temp = $floats[$down];		/* swap two values from */
+         $sTemp = $strings[$down];
+         $floats[$down] = $floats[$up];	/* above traverse. */
+         $strings[$down] = $strings[$up];
+         $floats[$up] = $temp;
+         $strings[$up] = $sTemp;
+      }
+   }								/* end while loop */
+
+   if ($up < $mid)					/* which side of the array? */
+      if  ($floats[$up] < $pivot)  	/* why did we stop search ? */
+      {
+         $p_idx = $up + 1;								/* return pivot location */
+         if (($up < $mid-1) && ($floats[$up+1] != $pivot))/*pivot not already in place*/
+         {
+            $floats[$mid] = $floats[$up+1];	/* put pivot in proper place*/
+            $strings[$mid] = $strings[$up+1];
+            $floats[$up+1] = $pivot;
+            $strings[$up+1] = $sPivot;                  
+         }
+      } else {
+         $p_idx = $up ;					/* return pivot location */
+         if ($floats[$up] != $pivot)		/* in case of duplicate */
+         {
+            $floats[$mid] = $floats[$up];	/* put pivot in proper place*/
+            $strings[$mid] = $strings[$up];
+            $floats[$up] = $pivot;  
+            $strings[$up] = $sPivot;
+         }
+      }
+   else
+      if ($up > $mid)
+      {
+         $floats[$mid] = $floats[$up];	/* put pivot in proper place*/
+         $strings[$mid] = $strings[$up];
+         $floats[$up] = $pivot;
+         $strings[$up] = $sPivot;
+         $p_idx = $up;				/* return pivot location */
+      } else {
+         $p_idx = $up;				/* return pivot location */
+	}
+
+	if ($left < $p_idx)
+		q_sort($floats, $strings, $left, $p_idx-1);
+	if ($right > $p_idx)
+		q_sort($floats, $strings, $p_idx+1, $right);
+}
+
+
+global proc string[] COM_hashQuickSort(string $vals[])
+{
+	int $size = size($vals);
+	float $floats[];
+	string $strings[], $tmp[];
+	int $t;
+	
+	if ($size > 1){
+		for ($i = 0; $i < $size; $i++){
+			$t = `tokenize $vals[$i] "#" $tmp`;
+			$floats[$i] = $tmp[0];
+			for ($j = 1; $j < $t; $j++){
+				$strings[$i] = ($strings[$i]+"#"+$tmp[$j]);
+			}
+		}
+		
+ 		q_sort($floats, $strings, 0, $size - 1);
+ 	}else{
+ 		return $vals;
+	}
+ 	
+ 	// Rebuild hash
+ 	for ($i = 0; $i < $size; $i++){
+ 		$vals[$i] = ($floats[$i]+$strings[$i]);
+ 	}
+
+	return $vals;
+}

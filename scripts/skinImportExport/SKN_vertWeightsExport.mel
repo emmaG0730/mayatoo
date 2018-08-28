@@ -1,0 +1,476 @@
+/*! <!--startDoc-->
+
+>>Filename
+
+	SKN_vertWeightsExport.mel
+
+>>Author
+
+	Eric Vignola -- 12-30-04 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+	Modified skin data exporter
+
+>>Description
+
+	Part of the procedural build concept. Due to the absence of resources to create a plug-in to do this
+	I had to come up with a workaround. This script and its import counterpart solve the problem of geometry
+	updates on our character.
+	
+	The script creates a weightFile and a corresponding weightMap. The map is a .ma
+	file containing copies of all the skinned meshes, including one master merged mesh made of a combination
+	of all sub meshes. The weight file contains the weight data for the map file. At import time, we'll use them
+	to skin geometry. The "master" mesh (the combination of everything) will be used to skin any additional geometry
+	newly added.
+	
+	Note: The script assumes that all meshes are gouped under a node called "geometry."
+	(See BOND_charBuildUI.mel line 329 for example calling procedure.)
+
+>>Arguments
+
+	string $weightFile: Directory location for the text file we intend to create
+	
+	Example: string $weightFile = "C:/weights/weights.vwt";
+	
+	string $weightMap: Directory location for a saved copy of the selected geometry
+	
+	Example: string $weightMap = "C:/weights/weights.ma";
+	
+	string $list[]: a list of the geometry in the scene whose weights we wish to export
+	
+	Example: $list[] = {"bond_watch","hands","head","body","tongue", ... }
+	
+	string $jointPrefix: optionally delete this string from the joint names
+	
+	Example: joint1 = "pre_joint1" and $jointPrefix = "pre_" -> joint1 = "joint1"
+
+>>Return
+
+	The number of joints in the scene.
+
+>>Examples
+
+	Type: "SKN_vertWeightsExport"
+	Exports everything listed under group "geometry."
+	
+	Note: Selection has no bearing on the exported geometry.
+
+>>Dependencies
+
+	Meant to complement SKN_weightImport.mel
+	COM_hashQuickSort.mel (required)
+	COM_joinString.mel (required)
+	COM_joinFloat.mel (required)
+	COM_polyInfo.mel (required)
+	COM_xform.mel (required)
+
+>>Updates
+
+	07-25-05: ? (Mike Lang)
+	
+	11-20-05: Moved vertex parsing from UI to routine (Eric Vignola)
+
+<!--endDoc-->
+
+*/
+
+proc string[] prefix_strip(string $list[])
+{
+	string $return[];
+	
+	for ($k = 0; $k < size($list); $k++){
+		string $temp[];
+		int $num = `tokenize $list[$k] ":" $temp`;
+		
+		if ($num > 1){
+			$return[$k] = $temp[$num-1];
+		}else{
+			$return[$k] = $list[$k];
+		}
+	}	
+	
+	return $return;
+}
+
+
+global proc int SKN_vertWeightsExport(string $weightFile, string $selection[], string $jointPrefix, int $jointNameSpace, string $geoPrefix, int $geoNameSpace, int $progressBar)
+{	
+	
+	float $start =  `timerX`;
+	print "\n>> Beginning Skin Exporting Process ...\n";
+	
+	
+   // ---------------------------------------------------------------------------------------
+   // WHAT USED TO BE LOCAL TO UI
+   // ---------------------------------------------------------------------------------------
+	
+   //---------------------//
+   // Build a vertex list //
+   //---------------------//
+   string $geoList[], $vertList[];
+   
+   // Make sure we're only taking vertex components	                 
+   $vertList = COM_stringInArray("*.vtx*",$selection,true,true,"","");
+   
+   // Get a list of geometry associated with the selected vertices
+   $vertGeo = COM_stringInArray("*",$vertList,true,false,".vtx.*","");
+   
+   // Get the list of selected transform nodes (i.e. geometry selected as a full object)
+   $geoList = `ls -type "transform" $selection`;
+   
+   // Put geometry's vertices into vert list
+   int $vertCount[];
+   for ($elem in $geoList)
+   {
+      
+      // Check to see if vertices were selected on this geometry
+      int $found = false;
+      for ($node in $vertGeo) {
+         
+         // If there are already vertices from this geo in the list
+         if ($node == $elem) {
+            // Take them out of the list (we'll re-enter them with the rest of this geo's vertices)
+            $vertList = COM_stringInArray("*",$vertList,true,true,($elem+".vtx.*"),"");
+            break;
+         }
+      }
+      
+      // Grab the geometry's vert count (if not a mesh, remove it)
+      if ( catchQuiet($vertCount = `polyEvaluate -v $elem`)) {
+         print("\n");
+         warning ("Transform: "+$elem+" is not a mesh.  Removing it from the export list.");
+         COM_stringInArray("*",$geoList,true,true,($elem+".*"),"");
+      };
+      
+      // Find the starting index for pushing vertices to the list
+      int $nCount = `size $vertList`;
+         
+      // Process every vertex in current geometry
+      for ($i = 0; $i < ($vertCount[0]); $i++)
+      {         
+         $vertList[$nCount++] = ($elem + ".vtx[" + $i + "]");
+      }
+            
+   }
+   
+   //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   // ??? Sort Geometry by size ??? //
+   //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   
+   // ---------------------------------------------------------------------------------------
+   // END OF WHAT USED TO BE LOCAL TO UI
+   // ---------------------------------------------------------------------------------------
+
+
+	// Exit if there's no geometry to look at
+	if (`size $vertList` == 0) {
+		error("Empty Vertex List. [ You must select geometry to skin (!) ]");
+	}
+	
+	
+	// Init vars
+	string $vertex, $line, $elem, $shape[], $history[], $skinCluster[], $geoList[];
+	string $verts[], $list[], $tmpJointList[], $jointList[], $nodeJointList[];
+	int $fileId, $polyCount[], $count, $break;
+	float $weights[], $tmpWeights[];
+	vector $pos[], $n[];
+	
+	
+	// Grab geometry from the list of vertices
+	clear $geoList;
+	$geoList = COM_stringInArray("*",$vertList,true,false,".vtx.*","");
+	
+	
+	// Check for name conflicts
+	int $geoSize = size($geoList);
+	for ($i = 0; $i < $geoSize; $i++)
+	{
+		if(`gmatch $geoList[$i] "*|*"`)
+		{
+			error ( $geoList[$i] + " has a non-unique name please rename and try again.");
+		}
+	}
+	
+
+	// Some pieces might be skinned to different bones, and in various order, go through every
+	// geometry and organize a single joint list to be used for all exported nodes.
+	// ---------------------------------------------------------------------------------------
+	$count = 0;
+	for ($elem in $geoList){
+		$shape			= `ls -dagObjects -hd 1 -type mesh $elem`;	
+		$history		= `listHistory $shape[0]`;
+		$skinCluster	= `ls -type skinCluster $history`;
+		$tmpJointList	= `listConnections ($skinCluster[0] + ".matrix")`;
+		$tmpJointList	= `sort $tmpJointList`;
+
+		for ($i = 0; $i < `size $tmpJointList`; $i++){
+			$break = 0;
+
+			for ($j = 0; $j < `size $jointList`; $j++){
+				if ($jointList[$j] == $tmpJointList[$i]){
+					$break = 1;
+					break;
+				}
+			}
+
+			if ($break == 0){
+				$jointList[$count] = $tmpJointList[$i];
+				$count++;
+			}
+		}
+	}
+
+	// Sort final list alphabetically
+	$jointList = `sort $jointList`;
+	int $i;
+	string $noPrefixJoints[];
+	$noPrefixJoints = COM_stringInArray("*",$jointList,true,true,$jointPrefix,"");
+	
+	// Check for automatic namespace removal
+	if ($jointNameSpace == 1)
+		$noPrefixJoints = prefix_strip($noPrefixJoints);
+
+	
+	
+	//----------------//
+	// Progress Meter //
+	//----------------//
+		
+	// Grab the number of verts to process
+	int $total = `size $vertList`;
+		
+	// Set a count to track the progress
+	int $amount = 0;
+			
+			
+	// Create progress meter
+	if ($progressBar != 0){
+		progressWindow
+			-title "Skin Weight Export"
+			-progress $amount
+			-maxValue $total
+			-status "Exporting: 0%"
+			-isInterruptable true;
+	}
+	
+
+
+	//--------------------------//
+	// Write to the skin file. //
+	//-------------------------//
+	
+	// Open the export file for data writing
+	$fileId =`fopen $weightFile "w"`;
+
+	// Print the joints
+	fprint $fileId ("JNTS: " + COM_joinString($noPrefixJoints," ") + "\n");
+	
+	
+	
+	string $geoVerts[];
+	int $vertTable[], $vertCount[];
+	int $nCount = 0;
+	
+	// For each element of geometry
+	for ($elem in $geoList) {
+
+		// Get the skin cluster name
+		clear $shape $history $skinCluster;
+		$shape			= `ls -dagObjects -hd 1 -type mesh $elem`;	
+		$history		= `listHistory $shape[0]`;
+		$skinCluster	= `ls -type skinCluster $history`;
+							
+		// If this geometry isn't skinned, skip; otherwise print info out
+		if ($skinCluster[0] == ""){
+			print (" -Skipping: '"+$elem+"'. No skinCluster (!)\n");
+			
+		}else {
+		
+			// Get the selected verts for this geometry
+			clear $geoVerts;
+			$geoVerts = COM_stringInArray(($elem+".vtx*"),$vertList,true,true,"","");
+			
+			// Grab size of geo and setup marker table 
+			clear $vertCount $vertTable;
+			$vertCount = `polyEvaluate -v $elem`;
+			$vertTable[($vertCount[0]) - 1] = false;
+		
+			int $nSelected = `size $geoVerts`;
+			print (" -Exporting: '"+$elem+"' Total Verts: "+$nSelected+"\n");
+			
+			// Print geometry name to file
+			// Eric Vignola - Filter names if required
+			string $noPrefixGeo[];
+			$noPrefixGeo = COM_stringInArray("*",{$elem},true,true,$geoPrefix,"");
+			if ($geoNameSpace == 1)
+				$noPrefixGeo = prefix_strip($noPrefixGeo);
+	
+			fprint $fileId ("NODE: "+$noPrefixGeo[0]+"\n{\n");
+			
+			
+			// Get joints associated with this geometry's skin cluster
+			clear $tmpJointList $nodeJointList;
+			$tmpJointList	= `listConnections ($skinCluster[0] + ".matrix")`;
+			$nodeJointList  = COM_stringInArray("*",$tmpJointList,true,true,$jointPrefix,"");
+			
+			
+			// Check for automatic namespace removal
+			if ($jointNameSpace == 1)
+				$nodeJointList = prefix_strip($nodeJointList);
+			
+			fprint $fileId ("\tJNTS: " + COM_joinString($nodeJointList," ") + "\n");
+
+		
+			// Print vertex header to file
+			fprint $fileId ("\tVRTS: "+$nSelected+" / "+$vertCount[0]+"\n");
+			
+			
+			//  Mark selected vertices in table
+			// (Used to check if neighbor verts are selected)
+			for ($vert in $geoVerts) {
+		
+				// Get index of current vertex
+				string $vertIndex = `match "\\[.*\\]" $vert`;
+				$vertIndex = `match "[0-9]+" $vertIndex`;
+		
+				$vertTable[(int)$vertIndex] = true;
+			}
+			
+			
+			//***********************************
+			//print ("\n"+$elem+"vertTable:\n");
+			//print $vertTable;
+			//***********************************
+		
+			
+			// Print info for selected verts to file
+			string $faces[], $adjVerts[], $neighbors[];
+			for ($vert in $geoVerts) {
+			
+				// Get index of current vertex
+				string $vertIndex = `match "\\[.*\\]" $vert`;
+				$vertIndex = `match "[0-9]+" $vertIndex`;				
+		
+				// Get the weights for the current vertex
+				clear $weights;
+				$weights = `skinPercent -q -v $skinCluster[0] ($vert)`;
+	
+				/*
+				// Reset weights to always be the size of joints and full of 0's
+				clear $weights;
+				for ($j = 0; $j < `size $jointList`; $j++){
+					$weights[$j] = 0;				
+				}
+				
+				// Add weights to list
+				for ($j = 0; $j < `size $tmpWeights`; $j++){
+					for ($k = 0; $k < `size $jointList`; $k++){
+		
+						if ($jointList[$k] == $tmpJointList[$j]){
+							$weights[$k] = $tmpWeights[$j];
+							break;
+						}
+					}
+				}
+				*/
+				
+				// Add vertex position to output string
+				clear $pos $n;
+				$pos = COM_pruneVectors(COM_xform({$vert},"-q -ws -t",{}),0.0000001);	
+				$line = (COM_joinFloat($pos[0],",") + "   ");
+				
+				// Add normal data at the end of line			
+				float $tmpFloat[] = `polyNormalPerVertex -q -xyz $vert`;
+				$n                = COM_floatToVectorArray($tmpFloat);
+				$n[0] 			  = MATH_vectorAverage($n);
+				$n 				  = COM_pruneVectors({$n[0]},0.0000001);
+				$line = ($line + COM_joinFloat($n[0],",") + "   ");
+				
+				// Add vertex weights to output string
+				for ($i = 0; $i < size($weights); $i++){
+					if ($weights[$i] < 0.01) $weights[$i] = 0;
+				}
+				$weights = MATH_normalize($weights);
+				$line = ($line + COM_joinFloat($weights,",")+"   ");
+					
+				// Collect the vertex neighbors
+				clear $faces $adjVerts $neighbors;
+				$faces = COM_polyInfo({$vert},"vf",0);
+				$adjVerts = COM_polyInfo($faces,"fv",1);
+
+				string $index;
+				for ($index in $adjVerts) {
+
+					// Only include neighbor if it's selected
+					if ($vertTable[(int)$index] == true)
+						$neighbors[`size $neighbors`] = ((int)$index + $nCount);
+						
+				}
+				
+				// Delete current vertex from neighbors list
+				int $globalIndex = (int)$vertIndex + $nCount;
+				$index = $globalIndex;
+				string $tmpString = COM_joinString($neighbors,",");
+				string $adjacent = `substitute $index $tmpString ""`;
+				$adjacent = `substitute ",," $adjacent ","`;
+				
+				//print ("substitute "+$index+" "+$tmpString+"\n");
+				//print ("before:"+$tmpString + "\n");
+				//print ("result:"+$adjacent + "\n");
+				
+				// Add vertex neighbors to output string
+				$line = ($line + ""+$adjacent+"");
+				
+				
+				// Print to file
+				fprint $fileId ("\tvert: "+((int)$vertIndex+$nCount)+"   "+$line+"\n");	
+			
+				// Check if progress bar was cancelled, if not, step it
+				if ($progressBar != 0){
+					if(`progressWindow -query -isCancelled`) {
+					
+						// Close the file and progress bar and report cancelation.
+						fprint $fileId ("\n\t*** Skin Export Canceled (!) ***");
+						fclose $fileId;
+						progressWindow -endProgress;
+						error("Skin Export Canceled by user.");
+							
+					} else {
+						$amount += 1;
+						// Set the progress
+						progressWindow -edit 
+							-progress $amount 
+							-status ("Exporting: "+((int)(100*(float)$amount/$total))+"%");
+					}
+				}
+			}
+			
+			
+			// Add geo count to global counter
+			$nCount = $nCount + $vertCount[0];
+			
+			// Terminate the node in the weight file
+			fprint $fileId "}\n";	
+			
+		}
+	
+	}
+	
+	// Stop the progress bar
+	if ($progressBar != 0)
+		progressWindow -endProgress;
+
+	// Print an end of file marker to the weight file
+	fprint $fileId ("EOF\n");
+	fclose $fileId;
+	
+	// We're done, rejoice.
+	print "\n>> Weight Exporting COMPLETE (!) [";
+	print(`timerX -st $start`); 
+	print(" sec]\n\n");
+
+	return `size $jointList`;
+
+}
+

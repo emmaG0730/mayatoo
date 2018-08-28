@@ -1,0 +1,59 @@
+{
+  "starman_joints" :
+  [
+    {
+      "name" : "s_M_spine_v1_SMN" ,
+      "radius" : 18,
+      "root" : "s_M_trajectory_v1_SMN",
+      "parent" : "b_M_spine2_v1_JNT",
+      "offset" : { "x" : 0, "y" : 0, "z": 0}
+    },
+
+    {
+      "name" : "s_M_head_v1_SMN" ,
+      "radius" : 13,
+      "root" : "s_M_trajectory_v1_SMN",
+      "parent" : "b_M_head_v1_JNT",
+      "offset" : { "x" : 0, "y" : 0, "z": 0}
+    },
+
+    {
+      "name" : "s_R_rightHand_v1_SMN" ,
+      "radius" : 10,
+      "root" : "s_M_trajectory_v1_SMN",
+      "parent" : "b_R_wrist_v1_JNT",
+      "offset" : { "x" : 0, "y" : 0, "z": 0}
+    },
+    {
+      "name" : "s_L_leftHand_v1_SMN" ,
+      "radius" : 10,
+      "root" : "s_M_trajectory_v1_SMN",
+      "parent" : "b_L_wrist_v1_JNT",
+      "offset" : { "x" : 0, "y" : 0, "z": 0}
+    },
+
+    {
+      "name" : "s_R_rightFoot_v1_SMN" ,
+      "radius" : 10,
+      "root" : "s_M_trajectory_v1_SMN",
+      "parent" : "b_R_ankle_v1_JNT",
+      "offset" : { "x" : 0, "y" : 0, "z": 0}
+    },
+
+    {
+      "name" : "s_L_leftFoot_v1_SMN" ,
+      "radius" : 10,
+      "root" : "s_M_trajectory_v1_SMN",
+      "parent" : "b_L_ankle_v1_JNT",
+      "offset" : { "x" : 0, "y" : 0, "z": 0}
+    }
+  ],
+
+  "trajectory" :
+  [
+    {
+      "name": "s_M_trajectory_v1_SMN",
+      "parent": "b_M_trajectory_v1_JNT"
+    }
+  ]
+}

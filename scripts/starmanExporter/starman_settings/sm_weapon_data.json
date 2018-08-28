@@ -1,0 +1,161 @@
+{
+    "weapon_00" :
+    [
+	
+        {
+          "name" : "s_L_weap01Start_v1_SMN" ,
+          "radius" : 8,
+          "attach_type" : "start",
+          "type" : 1,
+          "root" : "s_M_trajectory_v1_SMN",
+          "parent" : "b_L_wrist_v1_JNT",
+          "offset" : { "x" : 0, "y" : 0, "z": 0}
+        },
+
+        {
+          "name" : "s_L_weap01End_v1_SMN" ,
+          "radius" : 5,
+          "attach_type" : "end",
+          "type" : 1,
+          "root" : "s_L_weap01Start_v1_SMN",
+          "parent" : "s_L_weap01End_v1_LOC",
+          "offset" : { "x" : 10, "y" : 0, "z": 0}
+        },
+	
+        {
+          "name" : "s_R_weap01Start_v1_SMN" ,
+          "radius" : 8,
+          "attach_type" : "start",
+          "type" : 1,
+          "root" : "s_M_trajectory_v1_SMN",
+          "parent" : "b_R_wrist_v1_JNT",
+          "offset" : { "x" : 0, "y" : 0, "z": 0}
+        },
+
+        {
+          "name" : "s_R_weap01End_v1_SMN" ,
+          "radius" : 5,
+          "attach_type" : "end",
+          "type" : 1,
+          "root" : "s_R_weap01Start_v1_SMN",
+          "parent" : "s_R_weap01End_v1_LOC",
+          "offset" : { "x" : -10, "y" : 0, "z": 0}
+        }
+    ],
+
+
+    "weapon_01" :
+    [
+        {
+          "name" : "s_R_weap01Start_v1_SMN" ,
+          "radius" : 8,
+          "attach_type" : "start",
+          "type" : 1,
+          "root" : "s_M_trajectory_v1_SMN",
+          "parent" : "b_R_sword_v1_JNT",
+          "offset" : { "x" : 0, "y" : 0, "z": 0}
+        },
+
+        {
+          "name" : "s_R_weap01End_v1_SMN" ,
+          "radius" : 5,
+          "attach_type" : "end",
+          "type" : 1,
+          "root" : "s_R_weap01Start_v1_SMN",
+          "parent" : "s_R_weap01End_v1_LOC",
+          "offset" : { "x" : 105, "y" : 0, "z": 0}
+        }
+    ],
+
+    "weapon_02" :
+    [
+        {
+          "name" : "s_R_weap02Start_v1_SMN" ,
+          "radius" : 8,
+          "attach_type" : "start",
+          "type" : 1,
+          "root" : "s_M_trajectory_v1_SMN",
+          "parent" : "b_R_blade_v1_JNT",
+          "offset" : { "x" : 0, "y" : 0, "z": 0}
+        },
+
+        {
+          "name" : "s_R_weap02End_v1_SMN" ,
+          "radius" : 5,
+          "attach_type" : "end",
+          "type" : 1,
+          "root" : "s_R_weap02Start_v1_SMN",
+          "parent" : "s_R_weap02End_v1_LOC",
+          "offset" : { "x" : 87, "y" : 0, "z": 0}
+        }
+    ],
+
+    "weapon_04" :
+    [
+        {
+          "name" : "s_R_weap04Start_v1_SMN" ,
+          "radius" : 8,
+          "attach_type" : "start",
+          "type" : 1,
+          "root" : "s_M_trajectory_v1_SMN",
+          "parent" : "b_R_spear_v1_JNT",
+          "offset" : { "x" : 0, "y" : 0, "z": 0}
+        },
+
+        {
+          "name" : "s_R_weap04End_v1_SMN" ,
+          "radius" : 5,
+          "attach_type" : "end",
+          "type" : 1,
+          "root" : "s_R_weap04Start_v1_SMN",
+          "parent" : "s_R_weap04End_v1_LOC",
+          "offset" : { "x" : 135, "y" : 0, "z": 0}
+        }
+    ],
+	
+    "weapon_05" :
+    [
+        {
+          "name" : "s_R_weap05Start_v1_SMN" ,
+          "radius" : 8,
+          "attach_type" : "start",
+          "type" : 1,
+          "root" : "s_M_trajectory_v1_SMN",
+          "parent" : "b_L_longBow_v1_JNT",
+          "offset" : { "x" : 0, "y" : 0, "z": 0}
+        },
+
+        {
+          "name" : "s_R_weap05End_v1_SMN" ,
+          "radius" : 5,
+          "attach_type" : "end",
+          "type" : 1,
+          "root" : "s_R_weap05Start_v1_SMN",
+          "parent" : "s_R_weap05End_v1_LOC",
+          "offset" : { "x" : 10, "y" : 0, "z": 0}
+        }
+    ],
+
+    "weapon_10" :
+    [
+        {
+          "name" : "s_R_weap02Start_v1_SMN" ,
+          "radius" : 8,
+          "attach_type" : "start",
+          "type" : 1,
+          "root" : "s_M_trajectory_v1_SMN",
+          "parent" : "b_R_blade_v1_JNT",
+          "offset" : { "x" : 0, "y" : 0, "z": 0}
+        },
+
+        {
+          "name" : "s_R_weap02End_v1_SMN" ,
+          "radius" : 5,
+          "attach_type" : "end",
+          "type" : 1,
+          "root" : "s_R_weap02Start_v1_SMN",
+          "parent" : "s_R_weap02End_v1_LOC",
+          "offset" : { "x" : 87, "y" : 0, "z": 0}
+        }
+    ]
+}

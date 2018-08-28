@@ -1,0 +1,106 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        SKN_splineWeights.mel
+
+>>Author
+
+        mike lang -- 08-11-05 -- mike@mike-lang.com
+
+>>Synopsis
+
+        Returns a spline-based weighting for a point on a line
+
+>>Description
+
+        Given two points that form a line and a 3rd test point, this routine returns a spline 
+        interpolated weighting from the test point to each end point. The resulted weights are 
+        then returned in the form of a vector, with the z-value as 0. The code assumes the point 
+        is on the line.
+
+>>Arguments
+
+        vector $a: First point on the line.
+        
+        vector $b: Second point on the line.
+        
+        vector $p: Point in space to check.
+
+>>Return
+
+        vector -  <<weight_a, weight_b, 0>>
+
+
+>>Syntax
+
+        
+
+>>Examples
+
+        SKN_splineWeights(<<0,0,0>>,<<1,1,1>>,<<0.5,0.5,0.5>>);
+        //  Result: <<0.5, 0.5, 0>>
+
+>>Dependencies
+
+        
+
+>>Updates
+
+        
+
+<!--endDoc-->
+
+*/
+
+
+
+global proc vector SKN_splineWeights(vector $a, vector $b, vector $p)
+{
+   // Assure that the point is on line
+   $p = MATH_closestPointOnLine($a, $b, $p);
+   
+   // Find distances between points
+   float $ap = mag($a - $p);
+   float $bp = mag($b - $p);
+   float $ab = mag($a - $b);
+
+   // If points overlap
+   if ($ap == 0 || $ab == 0) 
+   { 
+      // If only two points overlap
+      if ($bp != 0)
+         return <<1, 1, 0>>;
+      else
+         // All 3 overlap, go halvsies
+         return <<0.5, 0.5, 0>>;
+   } 
+   else if ($bp == 0)
+   {
+      return <<0, 1, 0>>;
+   }
+   else 
+   {
+      // Initial weight equals the inverse distance
+      float $xyz[2] = {(1.0/$ap), (1.0/$bp)};
+      
+      // Normalize the weights
+      $xyz = MATH_normalize($xyz);
+      
+      // Map to from zero to pi
+      $xyz = MATH_floatMultiply($xyz, `deg_to_rad 180`);
+      
+      // Aplly a spline based weighting
+      $xyz[0] = 1.0 - (1.0 + cos($xyz[0]))/2.0;
+      $xyz[1] = 1.0 - (1.0 + cos($xyz[1]))/2.0;
+      
+      // Return result
+      vector $coord = <<$xyz[0], $xyz[1], 0>>;
+      return $coord;
+   
+   }
+
+
+
+}

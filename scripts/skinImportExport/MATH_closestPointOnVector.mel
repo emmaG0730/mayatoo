@@ -1,0 +1,82 @@
+// (c) 2003-2005 Electronic Arts Inc.
+/*! <!--startDoc-->
+
+>>Filename
+
+        MATH_closestPointOnVector.mel
+
+>>Author
+
+        Eric Vignola -- 05-14-05 -- eric_vignola@yahoo.com
+
+>>Synopsis
+
+        Returns the closest perpendicular point on a given vector from a given world point
+
+>>Description
+
+        Given a point in space and two points making a vector, this routine will return the closest 
+        world coord on that vector. The code also caps the result at either end of the vector.
+
+>>Arguments
+
+        vector $a: First point of vector.
+        
+        vector $b: Second point of vector.
+        
+        vector $p: Point in space to calculate.
+
+>>Return
+
+        vector -  closest point on vector
+
+>>Syntax
+
+        
+
+>>Examples
+
+        MATH_closestPointOnVector(<<0,0,0>>,<<10,0,0>>,<<4,10,45>>);
+        
+        Result: <<4, 0, 0>>
+
+>>Dependencies
+
+        None.
+
+>>Updates
+
+        None.
+
+<!--endDoc-->
+
+*/
+
+
+global proc vector MATH_closestPointOnVector(vector $a, vector $b, vector $p)
+{	
+	// Check to see if the point is on $a or $b
+	if ($p == $a || $p == $b) return $p;
+	
+	// Check to see if we're on the vector
+	vector $ab = $b - $a;
+	
+	// Exit if vector lenght is 0
+	float $lenght_ab = mag($ab);
+	if ($lenght_ab == 0) return $p;
+	
+	// Test to see if we're within the borders
+	vector $ap = $p - $a;
+	$test = dot($ab,$ap)/$lenght_ab ;
+	
+	if ($test < 0 ){
+		return $a;
+	}else if ($test > $lenght_ab){
+		return $b;
+	}
+	
+	vector $return = (dot($ap,unit($ab))*unit($ab))+$a;
+	
+	return $return;
+
+}
